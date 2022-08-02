@@ -2,7 +2,7 @@
 
 Code related to Zhu Y, Auer F, Ehrlich DE, Schoppik D., 2022.
 
-This code is for analysis and visualization of data generated using free-swimming apparatus.
+This code is for analysis and visualization of data generated using free-swimming vertical fish apparatus.
 
 ## Requirements
 
@@ -49,13 +49,15 @@ To generate figures:
 
 - `plot_timeseries.py` plots basic parameters as a function of time. Modify "all_features" to select parameters to plot. This script contains two functions: `plot_aligned()`, `plot_raw()`.
 
+- `plot_parameters.py` plots swim parameters and their distribution. This script contains function: `plot_parameters`
+
 - `plot_IBIposture.py` plots Inter Bout Interval (IBI or IEI) posture distribution and standard deviation. This script contains function: `plot_IBIposture()`. This script looks for "prop_Bout_IEI2" in the "prop_bout_IEI_pitch" data which includes mean of body angles during IEI.
 
-- `plot_bout_frequency.py` plots bout frequency as a function of pitch angle and fiitted coefs of function `y = a * ((x-b)^2) + c`. Jackknife resampling is applied if contains data from multiple experiments (subfolders under the root path). This script contains function: `plot_bout_frequency()`
+- `plot_bout_timing.py` plots bout frequency as a function of pitch angle and fiitted coefs of function `y = a * ((x-b)^2) + c`. Jackknife resampling is applied if contains data from multiple experiments (subfolders under the root path). This script contains function: `plot_bout_frequency()`
 
 - `plot_kinetics.py` plots bout kinetics: righting gain, set point, steering gain. Jackknife resampling is applied if contains data from multiple experiments (subfolders under the root path). This script contains function: `plot_kinetics()`
 
-- `plot_fin_body_coordination.py` 
+- `plot_fin_body_coordination.py` plots attack angle as a function of pre-bout rotation and calculates the maximal slope which is considered the fin-body ratio. This script contains function: `plot_atk_ang_posture_chg()`
 
 ## License
 
