@@ -20,8 +20,8 @@ This script takes two types of directory:
         ├── bout_data.h5
         └── IEI_data.h5
 NOTE
-600 bouts are sampled from each experimental repeat for proper jackknifing. Turn off sampling if desired (if_sample = False)
-'''
+User may define the number of bouts sampled from each experimental repeat for jackknifing by defining the argument "sample_bout"
+Default is off (sample_bout = -1)'''
 
 # %%
 import os
@@ -32,15 +32,23 @@ import matplotlib.pyplot as plt
 from astropy.stats import jackknife_resampling
 from plot_functions.plt_tools import (set_font_type, day_night_split, defaultPlotting)
 
-def plot_IBIposture(root):
+def plot_IBIposture(root, **kwargs):
     print('\n- Plotting inter-bout-interval posture')
     # generate figure folder
     folder_name = 'IBI posture'
     folder_dir = os.getcwd()
     fig_dir = os.path.join(folder_dir, 'figures', folder_name)
     
-    if_sample = True
-    SAMPLE_N = 600
+    if_sample = False
+    SAMPLE_N = -1
+    
+    for key, value in kwargs.items():
+        if key == 'sample_bout':
+            SAMPLE_N = value
+    if SAMPLE_N == -1:
+        SAMPLE_N = int(input("How many bouts to sample from each dataset? ('0' for no sampling): "))
+    if SAMPLE_N > 0:
+        if_sample = True
 
     try:
         os.makedirs(fig_dir)
@@ -67,7 +75,8 @@ def plot_IBIposture(root):
     # %%
     all_angles = pd.DataFrame()
     ang_std = []
-
+    
+    all_dir.sort()
     # go through each condition folders under the root
     for expNum, exp_path in enumerate(all_dir):
         # for each sub-folder, get the path

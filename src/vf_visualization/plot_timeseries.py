@@ -39,6 +39,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from plot_functions.get_index import (get_index, get_frame_rate)
 from plot_functions.plt_tools import (set_font_type, day_night_split)
+from plot_functions.plt_v4 import get_set_point
 from tqdm import tqdm
 
 # %%
@@ -47,7 +48,7 @@ def plot_aligned(root):
     plots parameters of bouts aligned at the time of the peak speed.
     Input directory needs to be a folder containing analyzed dlm data.
     '''
-    print('\n- Plotting time series (aligned swim bouts)')
+    print('\n- Plotting parameter time series (mean ± SD).')
 
     # %%
     # choose the time duration to plot. 
@@ -137,22 +138,48 @@ def plot_aligned(root):
         exp_data = exp_data.assign(time_ms = (exp_data['idx']-peak_idx)/FRAME_RATE*1000)
         exp_data_all = pd.concat([exp_data_all,exp_data.loc[rows,:]])
     exp_data_all = exp_data_all.reset_index(drop=True)
+    # %%
+    # separate up and down by set_point
+    exp_data_all
+    pitch_pre_bout = exp_data_all.loc[exp_data_all.idx==int(peak_idx - 0.1 * FRAME_RATE),'pitch (deg)'].values
+    pitch_peak = exp_data_all.loc[exp_data_all.idx==int(peak_idx),'pitch (deg)']
+    pitch_post_bout = exp_data_all.loc[exp_data_all.idx==int(peak_idx + 0.1 * FRAME_RATE),'pitch (deg)'].values
+    rot_l_decel = pitch_post_bout - pitch_peak
+    bout_features = pd.DataFrame(data={'pitch_pre_bout':pitch_pre_bout,'rot_l_decel':rot_l_decel})
+    set_point = get_set_point(bout_features)['set_point']
+    
+    grp = exp_data_all.groupby(np.arange(len(exp_data_all))//(idxRANGE[1]-idxRANGE[0]))
     exp_data_all = exp_data_all.assign(
-        pitch_dir = pd.cut(exp_data_all['pitch (deg)'],[-90,10,90],labels=['down','up'])
-    )
+                                    pitch_pre_bout = np.repeat(pitch_pre_bout,(idxRANGE[1]-idxRANGE[0])),
+                                    bout_number = grp.ngroup(),
+                                )
+    exp_data_all = exp_data_all.assign(
+                                    direction = pd.cut(exp_data_all['pitch_pre_bout'],[-90,set_point,90],labels = ['Nose-down', 'Nose-up'])
+                                )
     # %%
     # plot average
     set_font_type()
-
+    print("Mean bout parameters separated by set point, labeled as nose-up & nose-down")
     for feature_toplt in tqdm(list(all_features.values())):
         p = sns.relplot(
-            data = exp_data_all, x = 'time_ms', y = feature_toplt, col='pitch_dir',
-            kind = 'line',aspect=3, height=2, ci='sd'
-            )
+                data = exp_data_all, x = 'time_ms', y = feature_toplt,
+                col='direction',
+                kind = 'line',aspect=3, height=2, ci='sd'
+                )
         p.map(
             plt.axvline, x=0, linewidth=1, color=".3", zorder=0
             )
-        plt.savefig(os.path.join(fig_dir, f"{feature_toplt}_aligned.pdf"),format='PDF')
+        plt.savefig(os.path.join(fig_dir, f"{feature_toplt}_timeSeries_up_dn.pdf"),format='PDF')
+    print("Mean bout parameters")
+    for feature_toplt in tqdm(list(all_features.values())):
+        p = sns.relplot(
+                data = exp_data_all, x = 'time_ms', y = feature_toplt,
+                kind = 'line',aspect=3, height=2, ci='sd'
+                )
+        p.map(
+            plt.axvline, x=0, linewidth=1, color=".3", zorder=0
+            )
+        plt.savefig(os.path.join(fig_dir, f"{feature_toplt}_timeSeries.pdf"),format='PDF')
 
 # %%
 def plot_raw(root):
@@ -220,7 +247,6 @@ def plot_raw(root):
             exp_num = exp_num,
             epochNum = all_data['epochNum'].values,
             deltaT = all_data['deltaT'].values
-
         )
         
         epoch_info = exp_data.groupby('epochNum').size().reset_index()

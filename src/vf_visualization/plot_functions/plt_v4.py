@@ -74,14 +74,22 @@ def extract_bout_features_v4(bout_data,PEAK_IDX, FRAME_RATE):
 def get_kinetics(df):
     righting_fit = np.polyfit(x=df['pitch_pre_bout'], y=df['rot_l_decel'], deg=1)
     steering_fit = np.polyfit(x=df['pitch_peak'], y=df['traj_peak'], deg=1)
-    set_point = np.polyfit(x=df['rot_l_decel'], y=df['pitch_pre_bout'], deg=1)
     kinetics = pd.Series(data={
         'righting_gain': -1 * righting_fit[0],
         'steering_gain': steering_fit[0],
-        'set_point':set_point[1],
+        'set_point':-1 * righting_fit[1]/righting_fit[0],
     })
     return kinetics
 
+def get_set_point(df):
+    righting_fit = np.polyfit(x=df['pitch_pre_bout'], y=df['rot_l_decel'], deg=1)
+    # steering_fit = np.polyfit(x=df['pitch_peak'], y=df['traj_peak'], deg=1)
+    kinetics = pd.Series(data={
+        'righting_gain': -1 * righting_fit[0],
+        # 'steering_gain': steering_fit[0],
+        'set_point':-1 * righting_fit[1]/righting_fit[0],
+    })
+    return kinetics
 
 def jackknife_kinetics(df,col):
     """_summary_

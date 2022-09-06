@@ -20,7 +20,8 @@ This script takes two types of directory:
         └── IEI_data.h5
 
 NOTE
-600 bouts are sampled from each experimental repeat for proper jackknifing. Turn off sampling if desired (if_sample = False)
+User may define the number of bouts sampled from each experimental repeat for jackknifing by defining the argument "sample_bout"
+Default is off (sample_bout = -1)
 '''
 
 #%%
@@ -65,15 +66,23 @@ def parabola_fit1(df, X_RANGE_to_fit):
     return output_coef, output_fitted
 
 # %%
-def plot_bout_timing(root):
+def plot_bout_timing(root, **kwargs):
     print('\n- Plotting bout frequency as a function of pitch')
     # CONSTANTS
     BIN_WIDTH = 3  # this adjusts the density of raw data points on the fitted parabola
     X_RANGE_FULL = range(-60,61,1)
     
-    if_sample = True
-    SAMPLE_N = 600
-        
+    if_sample = False
+    SAMPLE_N = -1
+    
+    for key, value in kwargs.items():
+        if key == 'sample_bout':
+            SAMPLE_N = value
+    if SAMPLE_N == -1:
+        SAMPLE_N = int(input("How many bouts to sample from each dataset? ('0' for no sampling): "))
+    if SAMPLE_N > 0:
+        if_sample = True
+    
     folder_name = 'bout frequency'
     folder_dir = os.getcwd()
     fig_dir = os.path.join(folder_dir, 'figures', folder_name)

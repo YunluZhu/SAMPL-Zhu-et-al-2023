@@ -26,8 +26,8 @@ def main(root):
     plt.close('all')
     plot_atk_ang_posture_chg(root) 
     
-    plt.close('all')
-    plot_raw(root)
+    # plt.close('all')
+    # plot_raw(root)
     
 if __name__ == "__main__":
     root_dir = input("- Which data to plot? \n")

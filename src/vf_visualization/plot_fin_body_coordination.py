@@ -23,8 +23,8 @@ This script takes two types of directory:
         
 NOTE
 Reliable sigmoid regression requires as many bouts as possible. > 6000 bouts is recommended.
-600 bouts are sampled from each experimental repeat for proper jackknifing. Turn off sampling if desired (if_sample = False)
-'''
+User may define the number of bouts sampled from each experimental repeat for jackknifing by defining the argument "sample_bout"
+Default is off (sample_bout = -1)'''
 
 #%%
 import os
@@ -84,11 +84,20 @@ def distribution_binned_average(df, by_col, bin_col, bin):
 
 
 # %%
-def plot_atk_ang_posture_chg(root):
+def plot_atk_ang_posture_chg(root, **kwargs):
     print('\n- Plotting atk angle and fin-body ratio')
-    if_sample = True
-    SAMPLE_N = 600
 
+    if_sample = False
+    SAMPLE_N = -1
+    
+    for key, value in kwargs.items():
+        if key == 'sample_bout':
+            SAMPLE_N = value
+    if SAMPLE_N == -1:
+        SAMPLE_N = int(input("How many bouts to sample from each dataset? ('0' for no sampling): "))
+    if SAMPLE_N > 0:
+        if_sample = True
+        
     folder_name = 'atk_ang fin_body_ratio'
     folder_dir = os.getcwd()
     fig_dir = os.path.join(folder_dir, 'figures', folder_name)
@@ -134,7 +143,7 @@ def plot_atk_ang_posture_chg(root):
 
     all_for_fit = pd.DataFrame()
     mean_data = pd.DataFrame()
-                
+    all_dir.sort()
     for expNum, exp_path in enumerate(all_dir):
         exp_data = pd.read_hdf(f"{exp_path}/bout_data.h5", key='prop_bout_aligned').loc[:,['propBoutAligned_pitch','propBoutAligned_speed']]
         exp_data = exp_data.assign(idx=int(len(exp_data)/total_aligned)*list(range(0,total_aligned)))
@@ -195,6 +204,11 @@ def plot_atk_ang_posture_chg(root):
     slope = coef_master[0]*fit_atk_max/4
     print(f"Sigmoid slope = {slope.values}")
 
+    if ~if_jackknife:  # if no repeats for jackknife resampling
+        slope.name = 'slope'
+        slope = slope.to_frame().assign(
+            expNum = expNum
+            )
     # %%
     # jeackknife resampling to estimate error
     jackknife_coef = pd.DataFrame()
@@ -216,20 +230,25 @@ def plot_atk_ang_posture_chg(root):
             jackknife_coef = pd.concat([jackknife_coef,this_coef])
             jackknife_y = pd.concat([jackknife_y,this_y])
 
-    jackknife_coef = jackknife_coef.reset_index(drop=True)
-    jackknife_y = jackknife_y.reset_index(drop=True)
+        jackknife_coef = jackknife_coef.reset_index(drop=True)
+        jackknife_y = jackknife_y.reset_index(drop=True)
 
-    g = sns.lineplot(x='x',y=jackknife_y[0],data=jackknife_y,
-                    err_style="band", ci='sd'
-                    )
-    g = sns.lineplot(x='posture_chg',y='atk_ang',
-                        data=binned_df,color='grey')
-    g.set_xlabel("Posture change (deg)")
-    g.set_ylabel("Attack angle (deg)")
+        slope = jackknife_coef.iloc[:,0]*jackknife_coef.iloc[:,3]/4
+        slope.name = 'slope'
+        slope = slope.to_frame().assign(
+            expNum = jackknife_coef['excluded_exp'].values
+            )
+        g = sns.lineplot(x='x',y=jackknife_y[0],data=jackknife_y,
+                        err_style="band", ci='sd'
+                        )
+        g = sns.lineplot(x='posture_chg',y='atk_ang',
+                            data=binned_df,color='grey')
+        g.set_xlabel("Posture change (deg)")
+        g.set_ylabel("Attack angle (deg)")
 
-    filename = os.path.join(fig_dir,"attack angle vs pre-bout rotation (jackknife).pdf")
-    plt.savefig(filename,format='PDF')
-    plt.close()
+        filename = os.path.join(fig_dir,"attack angle vs pre-bout rotation (jackknife).pdf")
+        plt.savefig(filename,format='PDF')
+        plt.close()
     
     # %%
     # Attack angle
@@ -244,123 +263,15 @@ def plot_atk_ang_posture_chg(root):
     plt.savefig(filename,format='PDF')
     plt.close()
     
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    # # fix 2 of teh 4 parameters for sigmoid fit
-    # # determine y max (d) and y position (c)
-    # pos_for_fit = all_for_fit.loc[all_for_fit['pitch']>0,:]
-    # y_max = pos_for_fit['atk_ang'].mean() + pos_for_fit['atk_ang'].std()
-
-    # # master fit = fit with ALL data from ALL conditions other than lesion
-    # # to reduce free parameters, use c (min y) and d (max y) from master fit for jackknifed results
-
-    # df = pos_for_fit.loc[:,['atk_ang','posture_chg']]  # filter for the data you want to use for calculation
-    # coef_pos, fitted_y_pos, sigma_pos = sigmoid_fit(
-    #     df, X_RANGE, func=sigfunc_4free
-    #     )
-
-    # # x_intersect = coef_pos[1]
-    # y_position = coef_pos[2]
-
-    # # %%
-    # # fit sigmoid w/ 2 deg of freedom
-
-    # df = all_for_fit.loc[:,['atk_ang','posture_chg']]  # filter for the data you want to use for calculation
-    # coef_master, fitted_y_master, sigma_master = sigmoid_fit(
-    #     df, X_RANGE, func=sigfunc_4free, 
-    #     c=y_position,
-    #     d=y_max,
-    #     )
-
-    # g = sns.lineplot(x='x',y=fitted_y_master[0],data=fitted_y_master)
-    # binned_df = distribution_binned_average(df,by_col='posture_chg',bin_col='atk_ang',bin=AVERAGE_BIN)
-    # g = sns.lineplot(x='posture_chg',y='atk_ang',
-    #                     data=binned_df,color='grey')
-    # g.set_xlabel("Posture change (deg)")
-    # g.set_ylabel("Attack angle (deg)")
-
-    # filename = os.path.join(fig_dir,"attack angle vs pre-bout rotation.pdf")
-    # plt.savefig(filename,format='PDF')
-    # plt.close()
-    # # g = sns.scatterplot(x='posture_chg',y='atk_ang',
-    # #                     data=all_for_fit,alpha=0.02)
-
-    # # print(coef_master) 
-    # fit_atk_max = coef_master[3]- coef_master[2]
-    # slope = coef_master[0]*fit_atk_max
-    # print(f"Sigmoid slope = {slope.values}")
-
-    # # %%
-    # # Attack angle
-    # mean_data = all_for_fit.groupby('expNum').mean()
-    # mean_data = mean_data.reset_index()
-
-    # p = sns.pointplot(data=mean_data,
-    #                 y='atk_ang',
-    #                 hue='expNum')
-    # p.set_ylabel("Attack angle")
-    # filename = os.path.join(fig_dir,"attack angle.pdf")
-    # plt.savefig(filename,format='PDF')
-    # plt.close()
-    
-    # # %%
-    # # jeackknife resampling to estimate error
-    # jackknife_coef = pd.DataFrame()
-    # jackknife_y = pd.DataFrame()
-
-    # if if_jackknife:
-    #     jackknife_idx = jackknife_resampling(np.arange(0,expNum+1))
-    #     for excluded_exp, idx_group in enumerate(jackknife_idx):
-    #         this_data = all_for_fit.loc[all_for_fit['expNum'].isin(idx_group)]
-    #         df = this_data.loc[:,['atk_ang','posture_chg']]  # filter for the data you want to use for calculation
-    #         this_coef, this_y, this_sigma = sigmoid_fit(
-    #             df, X_RANGE, func=sigfunc_4free, 
-    #             c=y_position,
-    #             d=y_max,
-    #         )
-    #         this_coef = this_coef.assign(
-    #             excluded_exp = excluded_exp
-    #         )
-    #         this_y = this_y.assign(
-    #             excluded_exp = excluded_exp
-    #         )
-    #         jackknife_coef = pd.concat([jackknife_coef,this_coef])
-    #         jackknife_y = pd.concat([jackknife_y,this_y])
-
-    # jackknife_coef = jackknife_coef.reset_index(drop=True)
-    # jackknife_y = jackknife_y.reset_index(drop=True)
-    # # %%
-    # g = sns.lineplot(x='x',y=jackknife_y[0],data=jackknife_y,
-    #                 err_style="band",
-    #                 )
-    # g = sns.lineplot(x='posture_chg',y='atk_ang',
-    #                     data=binned_df,color='grey')
-    # g.set_xlabel("Posture change (deg)")
-    # g.set_ylabel("Attack angle (deg)")
-
-    # filename = os.path.join(fig_dir,"attack angle vs pre-bout rotation (jackknife).pdf")
-    # plt.savefig(filename,format='PDF')
-    # plt.close()
+    # %% 
+    # Slope
+    p = sns.pointplot(data=slope,
+                    y='slope',
+                    hue='expNum')
+    p.set_ylabel("Maximal slope of fitted sigmoid")
+    filename = os.path.join(fig_dir,"Fin-body ratio.pdf")
+    plt.savefig(filename,format='PDF')
+    plt.close()
 
 # %%
 if __name__ == "__main__":

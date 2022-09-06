@@ -1,6 +1,6 @@
 '''
-Plot distribution of bout parameters:
-    
+Plot distribution of bout parameters. Plot 2D distribution of parameters for kinetics calculation.
+
 This script takes two types of directory:
 1. input directory can be a folder containing analyzed dlm data...
     dir/
@@ -32,8 +32,8 @@ from plot_functions.plt_tools import (set_font_type, day_night_split)
 
 # %%
 def plot_save_histogram(toplt,feature_toplt,xlabel,fig_dir):
-    upper = np.percentile(toplt[feature_toplt], 99.5)
-    lower = np.percentile(toplt[feature_toplt], 0.5)
+    upper = np.nanpercentile(toplt[feature_toplt], 99.5)
+    lower = np.nanpercentile(toplt[feature_toplt], 0.5)
     g = sns.histplot(data=toplt, x=feature_toplt, 
                         bins = 20, 
                         element="poly",
@@ -49,7 +49,7 @@ def plot_save_histogram(toplt,feature_toplt,xlabel,fig_dir):
     plt.close()
         
 def plot_parameters(root):
-    print('\n- Plotting bout kinetics')
+    print('\n- Plotting bout parameters')
     # generate figure folder
     folder_name = 'parameters'
     folder_dir = os.getcwd()
@@ -172,7 +172,60 @@ def plot_parameters(root):
         else:
             xlabel = feature_toplt + " (s)"
         plot_save_histogram(toplt,feature_toplt,xlabel,fig_dir)
+    
+    # %%
+    # Plots relational plots and 2D distribution of parameters used to calculate kinetics
+    # righting gain
+    toplt = bout_features
+    g = sns.displot(data=toplt, y='rot_l_decel',x='pitch_pre_bout')
+    plt.xlabel('pre-bout pitch (deg)')
+    plt.ylabel('deceleration rot (deg)')
+    sns.despine()
+    filename = os.path.join(fig_dir,f"Righting_decelRot-posture.pdf")
+    plt.savefig(filename,format='PDF')
+    plt.close()    
+    
+    # regression
+    r = sns.regplot(data=toplt, y='rot_l_decel',x='pitch_pre_bout',x_bins=6)
+    r.set_xlabel('pre-bout pitch (deg)')
+    r.set_ylabel('deceleration rot (deg)')
+    filename = os.path.join(fig_dir,f"Righting_regression.pdf")
+    plt.savefig(filename,format='PDF')
+    plt.close()   
+    
+    # steering gain
+    g = sns.displot(data=toplt, y='traj_peak',x='pitch_peak')
+    plt.xlabel('pitch at 0ms (deg)')
+    plt.ylabel('traj at 0ms (deg)')
+    sns.despine()
+    filename = os.path.join(fig_dir,f"Steering_traj-posture.pdf")
+    plt.savefig(filename,format='PDF')
+    plt.close()        
+    
+    r = sns.regplot(data=toplt, y='traj_peak',x='pitch_peak',x_bins=6)
+    r.set_xlabel('pitch at 0ms (deg)')
+    r.set_ylabel('traj at 0ms (deg)')
+    filename = os.path.join(fig_dir,f"Steering_regression.pdf")
+    plt.savefig(filename,format='PDF')
+    plt.close()   
+    
+    # set point
+    g = sns.displot(data=toplt, y='rot_l_decel',x='pitch_pre_bout')
+    r.set_xlabel('pre-bout pitch (deg)')
+    r.set_ylabel('deceleration rot (deg)')
+    sns.despine()
+    filename = os.path.join(fig_dir,f"SetPoint_posture-rot.pdf")
+    plt.savefig(filename,format='PDF')
+    plt.close()     
 
+    r = sns.regplot(data=toplt, y='rot_l_decel',x='pitch_pre_bout',x_bins=6)
+    r.set_xlabel('pre-bout pitch (deg)')
+    r.set_ylabel('deceleration rot (deg)')
+    filename = os.path.join(fig_dir,f"Set point_regression.pdf")
+    plt.savefig(filename,format='PDF')
+    plt.close()  
+    
+    
 # %%
 if __name__ == "__main__":
     # if to use Command Line Inputs

@@ -3,7 +3,7 @@ Plot bout kinetics:
     righting gain
     set point
     steering gain
-    
+
 This script takes two types of directory:
 1. if input directory is a folder containing analyzed dlm data, an averaged value for each parameter will be plotted
     dir/
@@ -22,8 +22,8 @@ This script takes two types of directory:
         └── IEI_data.h5
         
 NOTE
-600 bouts are sampled from each experimental repeat for proper jackknifing. Turn off sampling if desired (if_sample = False)
-
+User may define the number of bouts sampled from each experimental repeat for jackknifing by defining the argument "sample_bout"
+Default is off (sample_bout = -1)
 '''
 
 #%%
@@ -37,15 +37,23 @@ from plot_functions.plt_v4 import (jackknife_kinetics, extract_bout_features_v4,
 from plot_functions.get_index import (get_index, get_frame_rate)
 
 # %%
-def plot_kinetics(root):
+def plot_kinetics(root, **kwargs):
     print('\n- Plotting bout kinetics')
     # generate figure folder
     folder_name = 'kinetics'
     folder_dir = os.getcwd()
     fig_dir = os.path.join(folder_dir, 'figures', folder_name)
     
-    if_sample = True
-    SAMPLE_N = 600
+    if_sample = False
+    SAMPLE_N = -1
+    
+    for key, value in kwargs.items():
+        if key == 'sample_bout':
+            SAMPLE_N = value
+    if SAMPLE_N == -1:
+        SAMPLE_N = int(input("How many bouts to sample from each dataset? ('0' for no sampling): "))
+    if SAMPLE_N > 0:
+        if_sample = True
 
     try:
         os.makedirs(fig_dir)
@@ -95,6 +103,7 @@ def plot_kinetics(root):
     bout_features = pd.DataFrame()
     bout_kinetics = pd.DataFrame()
 
+    all_dir.sort()
     # go through each condition folders under the root
     for expNum, exp in enumerate(all_dir):
         # angular velocity (angVel) calculation

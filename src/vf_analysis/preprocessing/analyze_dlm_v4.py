@@ -1,13 +1,14 @@
 '''
+Analyze Free Vertical (YZ 2021.06.18)
 - Functions:
-    1. Takes one raw dataframe, reslice epochs based on epoch number and fish number
+    1. Takes one raw dataframe, reslice epochs based on epoch number and fish number (210618 UPDATE)
     2. Truncate
     3. Calculate and filter for epoch duration, displacement, headx-x moving direction, angular velocity, angular acceleration 
     4. Add a distance filter
-    5. Return an analyzed dataframe and catalog files
-- Equivalent MATLAB scripts
-    1. analyzeFreeVerticalGrouped2 
-    2. GrabFishAngelAll
+    5. Return an analyzed dataframe and a fish length dataframe
+- Includes: 
+    1. analyzeFreeVerticalGrouped2 (by DEE)
+    2. angular acceleration filter in GrabFishAngelAll
 - Purpose of Python version by YZ:
     1. Rewrite of analyzeFreeVerticalGrouped2.m & GrabFishAngleAll.m for faster runtime (5s per .dlm)
     3. Adjust filters:
@@ -15,19 +16,24 @@
     1. Results of filtered epochs may be slightly different from Matlab results, due to the angVel smooth function
         Matlab smooth handles top/end values differently. Here, top values without enought window (smooth span) are returned as NA
     2. Due to the float64 data type, calculations are more accurate in Python version.
+    
+    
+    
+To be changed:
 '''
 # %%
 # Import Modules and functions
 import pandas as pd # pandas library
 import numpy as np # numpy
 from datetime import datetime
+from datetime import timedelta
 import math
 
 # %%
 # Constants
 
-MAX_FISH = 1         # all epochs that have more than one fish
-MAX_INST_DISPL = 35  # epochs where fish# > 1 but appear as 1 fish will have improbably large instantaneous displacement.
+# MAX_FISH = 1         # all epochs that have more than one fish
+MAX_INST_DISPL = 35  # in mm epochs where fish# > 1 but appear as 1 fish will have improbably large instantaneous displacement.
 MAX_ANG_VEL = 100  # or an improbably large angular velocity
 MAX_ANG_ACCEL = 32000  # or an improbably large angular accel.
 XY_SM_WSZ = 9  # smooth window size for x and y coordinates
@@ -35,7 +41,7 @@ XY_SM_WSZ = 9  # smooth window size for x and y coordinates
 MIN_VERTICLE_VEL = -7 # (mm/s) max verdical displacement difference. Used to exclude fish bout downwards.
 
 # Other parameters
-SCALE = 60           #(pix/mm) ofr BlackFly verticle fish rigs 1-6
+SCALE = 60           #(pix/mm) 
 SM_WINDOW_FOR_FILTER = 9     # smoothing
 SM_WINDOW_FOR_ANGVEL = 3
 
@@ -59,18 +65,18 @@ def smooth_series_ML(a,WSZ):
     res = np.concatenate((  start , out0, stop  ))
     return pd.Series(data=res, index=a.index)
 
-# def epoch_reslice(df):
-#     '''
-#     generate new epoch numbers by truncating each epoch at timepoints with more than 1 fish
-#     Frames with more than 1 fish are deletted
-#     '''
-#     df = df.assign(cumsum_fishNum = np.cumsum(df['fishNum']))
-#     # get rid of frames with more than one fish 
-#     df = df[df.fishNum == 0]  # fishNum == 0 for 1 fish
-#     # calculate new epoch number using cumsum_fishNum and epoch Num
-#     cantor_pairing = lambda a,b: 0.5*(a+b)*(a+b+1)+b
-#     df.loc[:,'epochNum'] = cantor_pairing(df.epochNum,df.cumsum_fishNum)
-#     return df
+def epoch_reslice(df):
+    '''
+    generate new epoch numbers by truncating each epoch at timepoints with more than 1 fish
+    Frames with more than 1 fish are deletted
+    '''
+    df = df.assign(cumsum_fishNum = np.cumsum(df['fishNum']))
+    # get rid of frames with more than one fish 
+    df = df[df.fishNum == 0]  # fishNum == 0 for 1 fish
+    # calculate new epoch number using cumsum_fishNum and epoch Num
+    cantor_pairing = lambda a,b: 0.5*(a+b)*(a+b+1)+b
+    df.loc[:,'epochNum'] = cantor_pairing(df.epochNum,df.cumsum_fishNum)
+    return df
 
 # define filter function
 def raw_filter(df,EPOCH_BUF,MIN_DUR):
@@ -124,7 +130,8 @@ def displ_dist_vel_filter(df,MAX_DIST_TRAVEL):
     )
     # exclude epochs with improbably large angular accel. numpy calculation is faster
     f3 = grp_by_epoch(f2).filter(
-        lambda g: np.nanmax(np.abs(g['angAccel'].values)) <= MAX_ANG_ACCEL
+        lambda g: np.nanmax(np.abs(g['angAccel'].rolling(3, center=True).mean())) <= MAX_ANG_ACCEL
+        # lambda g: np.nanmax(np.abs(g['angAccel'])) <= MAX_ANG_ACCEL
     )
     print(".", end="")
     return f3
@@ -133,19 +140,24 @@ def displ_dist_vel_filter(df,MAX_DIST_TRAVEL):
 # Main function
 def analyze_dlm_resliced(raw, file_i, file, folder, frame_rate):
     # Constants
-    MAX_DELTA_T = 2/frame_rate   # in s, epochs with inexplicably large gaps between frame timestamps
+    MAX_DELTA_T = 3/frame_rate   # in s, epochs with inexplicably large gaps between frame timestamps
     MIN_DUR = 2.5 * frame_rate  # 2.5s, minimun duration of epochs     
     EPOCH_BUF = math.ceil(frame_rate/20)        # truncate the epochs from both ends. In Matlab code, 3 was excluded in analyzeFreeVerticalGrouped2 and another 5 was dropped in GrabFishAngel
-    MAX_DIST_TRAVEL = 26 # in pix, max adjusted distance traveled value. defined as: (dist-dist.rolling(3, center=True).median()).abs(), epochs with multiple fish but appeared as 1 fish have aberrent displ jumps - YZ 20.05.13
+    MAX_DIST_TRAVEL = 26 # max distance traveled value. defined as: (dist-dist.rolling(3, center=True).median()).abs(), epochs with multiple fish but appeared as 1 fish have aberrent displ jumps - YZ 20.05.13
     # However, in analyzeFreeVerticalGrouped2, line epochDex:epochStop(i):epochStop(i+1) incorrectly truncated the beginning of the epoch by 1 and the end by 3. 
 
-    # reslice epochs, generating new epoch numbers
-    # resliced = epoch_reslice(raw)
-    resliced = raw  # resliced disabled b/c new apparatus only record single fish data
-    # Smooth x and y coordinates
-    resliced['absx'] = smooth_series_ML(resliced.loc[:,'absx'],XY_SM_WSZ)
-    resliced['absy'] = smooth_series_ML(resliced.loc[:,'absy'],XY_SM_WSZ)
     
+    # resliced = epoch_reslice(raw) 
+    if frame_rate == 40:
+        resliced = epoch_reslice(raw) # reslice epochs if more than one fish in FOV, generating new epoch numbers
+    else:
+        resliced = raw  # disabled, gen 2 boxes only include fish num == 0
+        
+    # Smooth x and y coordinates
+    if frame_rate > 100:  # if not data from gen 1 boxes
+        resliced['absx'] = smooth_series_ML(resliced.loc[:,'absx'],XY_SM_WSZ)
+        resliced['absy'] = smooth_series_ML(resliced.loc[:,'absy'],XY_SM_WSZ)
+        
     # truncate epochs
     raw_truncate = raw_filter(resliced.reset_index().rename(columns={'index': 'oriIndex'}),EPOCH_BUF,MIN_DUR)
 
@@ -171,7 +183,8 @@ def analyze_dlm_resliced(raw, file_i, file, folder, frame_rate):
     ana.insert(1,
         'absTime', start_time + pd.to_timedelta(raw_truncate['time'].values, unit=('s'))
     )
-
+    
+    ana = ana.loc[ana['deltaT']>0]  # V4.2 update for old data
     # Calculate coordinates
     #   dataframe subduction is faster than cumulative difference. 
     #   Use .values to convert into arrays to further speed up
@@ -184,7 +197,8 @@ def analyze_dlm_resliced(raw, file_i, file, folder, frame_rate):
     
     # Apply filters
     ana_f = dur_y_x_filter(ana,MAX_DELTA_T)
-
+    if ana_f.empty:
+        return "> no usable epoch detected > dlm file skipped", 0
     # %%
     # Calculate displacement, distance traveled, angular velocity, angular acceleration and filter epochs
 
