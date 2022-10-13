@@ -4,6 +4,11 @@ Code related to Zhu Y, Auer F, Ehrlich DE, Schoppik D., 2022.
 
 This code is for analysis and visualization of data generated using free-swimming vertical fish apparatus.
 
+## Version notes
+
+Analysis code ver: v4.4
+Plotting code ver: v4.4
+
 ## Requirements
 
 Build with Python3.8. See `environment.yml` for required packages.
