@@ -83,19 +83,19 @@ def extract_bout_features_v4(bout_data,peak_idx, FRAME_RATE):
     pitch_mid_decel = bout_data.loc[bout_data['idx']==idx_mid_decel,'propBoutAligned_pitch'].reset_index(drop=True)
     
     this_exp_features = this_exp_features.assign(rot_total=this_exp_features['pitch_end']-this_exp_features['pitch_initial'],
-                                                 rot_bout = this_exp_features['pitch_post_bout']-this_exp_features['pitch_pre_bout'],
-                                                rot_pre_bout=this_exp_features['pitch_pre_bout']-this_exp_features['pitch_initial'],
-                                                rot_l_accel=this_exp_features['pitch_peak']-this_exp_features['pitch_pre_bout'],
+                                                #  rot_bout = this_exp_features['pitch_post_bout']-this_exp_features['pitch_pre_bout'],
+                                                # rot_pre_bout=this_exp_features['pitch_pre_bout']-this_exp_features['pitch_initial'],
+                                                # rot_l_accel=this_exp_features['pitch_peak']-this_exp_features['pitch_pre_bout'],
                                                 rot_l_decel=this_exp_features['pitch_post_bout']-this_exp_features['pitch_peak'],
-                                                rot_early_accel = pitch_mid_accel-this_exp_features['pitch_pre_bout'],
+                                                # rot_early_accel = pitch_mid_accel-this_exp_features['pitch_pre_bout'],
                                                 rot_late_accel = this_exp_features['pitch_peak'] - pitch_mid_accel,
-                                                rot_early_decel = pitch_mid_decel-this_exp_features['pitch_peak'],
-                                                rot_late_decel = this_exp_features['pitch_post_bout'] - pitch_mid_decel,
+                                                # rot_early_decel = pitch_mid_decel-this_exp_features['pitch_peak'],
+                                                # rot_late_decel = this_exp_features['pitch_post_bout'] - pitch_mid_decel,
+                                                rot_early = pitch_mid_accel-this_exp_features['pitch_initial'],
                                                 bout_traj = epochBouts_trajectory,
                                                 bout_displ = displ,
-                                                atk_ang = epochBouts_trajectory - this_exp_features['pitch_pre_bout'],
                                                 # tsp_pre = this_exp_features['traj_pre_bout'] - this_exp_features['pitch_pre_bout'],
-                                                tsp_peak = this_exp_features['traj_peak'] - this_exp_features['pitch_peak'],
+                                                atk_ang = this_exp_features['traj_peak'] - this_exp_features['pitch_peak'],
                                                 angvel_chg = this_exp_features['angvel_post_phase'] - this_exp_features['angvel_initial_phase'] 
                                                 )  
     return this_exp_features

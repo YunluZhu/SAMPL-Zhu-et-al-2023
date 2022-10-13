@@ -39,7 +39,6 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from plot_functions.get_index import (get_index, get_frame_rate)
 from plot_functions.plt_tools import (set_font_type, day_night_split)
-from plot_functions.plt_v4 import get_set_point
 from tqdm import tqdm
 
 # %%
@@ -135,7 +134,7 @@ def plot_aligned(root):
         for i in day_night_split(bout_time,'aligned_time').index:
             rows.extend(list(range(i*total_aligned+idxRANGE[0],i*total_aligned+idxRANGE[1])))
 
-        exp_data = exp_data.assign(time_ms = (exp_data['idx']-peak_idx)/FRAME_RATE*1000)
+        exp_data = exp_data.assign(time_s = (exp_data['idx']-peak_idx)/FRAME_RATE*1000)
         exp_data_all = pd.concat([exp_data_all,exp_data.loc[rows,:]])
     exp_data_all = exp_data_all.reset_index(drop=True)
     # %%
@@ -146,7 +145,7 @@ def plot_aligned(root):
     pitch_post_bout = exp_data_all.loc[exp_data_all.idx==int(peak_idx + 0.1 * FRAME_RATE),'pitch (deg)'].values
     rot_l_decel = pitch_post_bout - pitch_peak
     bout_features = pd.DataFrame(data={'pitch_pre_bout':pitch_pre_bout,'rot_l_decel':rot_l_decel})
-    set_point = get_set_point(bout_features)['set_point']
+    separation_pitch = 10
     
     grp = exp_data_all.groupby(np.arange(len(exp_data_all))//(idxRANGE[1]-idxRANGE[0]))
     exp_data_all = exp_data_all.assign(
@@ -154,7 +153,7 @@ def plot_aligned(root):
                                     bout_number = grp.ngroup(),
                                 )
     exp_data_all = exp_data_all.assign(
-                                    direction = pd.cut(exp_data_all['pitch_pre_bout'],[-90,set_point,90],labels = ['Nose-down', 'Nose-up'])
+                                    direction = pd.cut(exp_data_all['pitch_pre_bout'],[-90,separation_pitch,90],labels = ['Nose-down', 'Nose-up'])
                                 )
     # %%
     # plot average
@@ -162,7 +161,7 @@ def plot_aligned(root):
     print("Mean bout parameters separated by set point, labeled as nose-up & nose-down")
     for feature_toplt in tqdm(list(all_features.values())):
         p = sns.relplot(
-                data = exp_data_all, x = 'time_ms', y = feature_toplt,
+                data = exp_data_all, x = 'time_s', y = feature_toplt,
                 col='direction',
                 kind = 'line',aspect=3, height=2, ci='sd'
                 )
@@ -173,7 +172,7 @@ def plot_aligned(root):
     print("Mean bout parameters")
     for feature_toplt in tqdm(list(all_features.values())):
         p = sns.relplot(
-                data = exp_data_all, x = 'time_ms', y = feature_toplt,
+                data = exp_data_all, x = 'time_s', y = feature_toplt,
                 kind = 'line',aspect=3, height=2, ci='sd'
                 )
         p.map(
@@ -195,17 +194,18 @@ def plot_raw(root):
         'ang':'pitch (deg)',
         # 'absy':'y position (mm)'
         # 'deltaT', 
-        # 'x', 'y',
+        'x':'x',
+        'y':'y',
         'headx':'head x (mm)',
         'heady':'head y (mm)',
-        'centeredAng':'centered angle (deg)',
+        # 'centeredAng':'centered angle (deg)',
         # 'xvel', 
         # 'yvel', 
         'dist':'distance (mm)',
-        'displ':'displacement (mm)',
+        # 'displ':'displacement (mm)',
         'angVel':'ang vel (deg*s-1)',
         # 'angVelSmoothed', 
-        'angAccel':'ang accel (deg*s-2)',
+        # 'angAccel':'ang accel (deg*s-2)',
         'swimSpeed':'speed (mm*s-1)',
         'velocity':'velocity (mm*s-1)'
     }
@@ -276,18 +276,18 @@ def plot_raw(root):
 
         # %%
         data_toplt = data_toplt.assign(
-            time_ms = np.cumsum(data_toplt['deltaT'])
+            time_s = np.cumsum(data_toplt['deltaT'])
         )
 
         set_font_type()
 
         for feature_toplt in tqdm(list(all_features.values())):
             p = sns.relplot(
-                data = data_toplt, x = 'time_ms', y = feature_toplt,
+                data = data_toplt, x = 'time_s', y = feature_toplt,
                 kind = 'line',aspect=3, height=2
                 )
             plt.savefig(os.path.join(fig_dir, f"{feature_toplt}_raw.pdf"),format='PDF')
-        
+            plt.close()
         if_plot_others = input(f'Plot another epoch? Previous plots will be overwritten: (y/n) ')
 # %%
 if __name__ == "__main__":

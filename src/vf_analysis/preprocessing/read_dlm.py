@@ -1,13 +1,10 @@
 '''
 Read one .dlm file and return a dataframe
-Modified from:
-analyzeFreeVerticalGrouped2.m by DEE 1.30.2015
-    "the LabView code returns a value to mark an "epoch," which is a continuous series of frames that had at least one identified particle 
-+ lines to output head location in addition to body, for detection direction of movement." 
 '''
 
 import pandas as pd
 import numpy as np
+
 
 def read_dlm(i, filename):
     # read_dlm takes file index: i, and the file name end with .dlm
@@ -40,4 +37,9 @@ def read_dlm(i, filename):
     raw.dropna(inplace=True)
     # rows with epochNum == NA may have non-numeric data recorded. In this case, change column types to float for calculation. not necessary for most .dlm.
     raw[['fishNum','ang','absx','absy','absHeadx','absHeady','col7','epochNum','fishLen']] = raw[['fishNum','ang','absx','absy','absHeadx','absHeady','col7','epochNum','fishLen']].astype('float64',copy=False)
+    
+    # V4.4 smooth angle by window of 5
+    # beause in analyze_dlm.py, each epoch is truncated at the beginning, mistakenly smoothed pitch between epochs will be cleared
+    # raw['ang'] = savgol_filter(raw['ang'], 5, 3)
+
     return raw

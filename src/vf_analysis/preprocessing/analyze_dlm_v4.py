@@ -17,9 +17,6 @@ Analyze Free Vertical (YZ 2021.06.18)
         Matlab smooth handles top/end values differently. Here, top values without enought window (smooth span) are returned as NA
     2. Due to the float64 data type, calculations are more accurate in Python version.
     
-    
-    
-To be changed:
 '''
 # %%
 # Import Modules and functions
@@ -43,7 +40,7 @@ MIN_VERTICLE_VEL = -7 # (mm/s) max verdical displacement difference. Used to exc
 # Other parameters
 SCALE = 60           #(pix/mm) 
 SM_WINDOW_FOR_FILTER = 9     # smoothing
-SM_WINDOW_FOR_ANGVEL = 3
+SM_WINDOW_FOR_ANGVEL = 5
 
 # %%
 # Define functions
@@ -152,7 +149,6 @@ def analyze_dlm_resliced(raw, file_i, file, folder, frame_rate):
         resliced = epoch_reslice(raw) # reslice epochs if more than one fish in FOV, generating new epoch numbers
     else:
         resliced = raw  # disabled, gen 2 boxes only include fish num == 0
-        
     # Smooth x and y coordinates
     if frame_rate > 100:  # if not data from gen 1 boxes
         resliced['absx'] = smooth_series_ML(resliced.loc[:,'absx'],XY_SM_WSZ)
@@ -256,4 +252,6 @@ def analyze_dlm_resliced(raw, file_i, file, folder, frame_rate):
     print(f" {len(grp_by_epoch(res).size())} epochs extracted", end=' ')
 
     return res, fish_length
+
+
 

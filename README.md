@@ -56,8 +56,33 @@ To generate figures:
 - `plot_bout_timing.py` plots bout frequency as a function of pitch angle and fiitted coefs of function `y = a * ((x-b)^2) + c`. Jackknife resampling is applied if contains data from multiple experiments (subfolders under the root path). This script contains function: `plot_bout_frequency()`
 
 - `plot_kinetics.py` plots bout kinetics: righting gain, set point, steering gain. Jackknife resampling is applied if contains data from multiple experiments (subfolders under the root path). This script contains function: `plot_kinetics()`
+- `plot_fin_body_coordination.py` plots attack angle as a function of rotation and calculates the maximal slope which is termed the fin-body ratio. This script contains function: `plot_atk_ang_posture_chg()`
 
-- `plot_fin_body_coordination.py` plots attack angle as a function of pre-bout rotation and calculates the maximal slope which is considered the fin-body ratio. This script contains function: `plot_atk_ang_posture_chg()`
+### Parameters
+
+| Parameters                | Unit | Definition                                                                                |
+| ------------------------- | ---- | ----------------------------------------------------------------------------------------- |
+| Pitch angle               | deg  | Angle of the fish on the pitch axis relative to horizonal                                 |
+| Peak speed                | mm/s | Peak speed of swim bouts                                                                  |
+| Initial pitch             | deg  | Pitch angle at 250 ms before the peak speed                                               |
+| Post-bout pitch           | deg  | Pitch angle at 100 ms after the peak speed                                                |
+| End pitch                 | deg  | Pitch angle at 200 ms after the peak speed                                                |
+| Acceleration phase        |      | Before time of the peak speed                                                             |
+| Deceleration phase        |      | After time of the peak speed                                                              |
+| Total rotation            | deg  | Pitch change from initial (250 ms before) to end (200 ms after) time of the peak speed    |
+| Bout trajectory           | deg  | Tangential angle of the trajectory at the time of the peak speed                          |
+| Bout displacement         | mm   | Displacement of fish from pre-bout to post-bout                                           |
+| Inter-bout interval       | s    | Duration between two adjacent swim bouts                                                  |
+| Inter-bout-interval pitch | deg  | Mean pitch angle during inter-bout interval                                               |
+| Trajectory deviation      | deg  | Deviation of bout trajectory from initial pitch (250 ms before)                           |
+| Steering rotation         | deg  | Change of pitch angle from initial (250 ms before) to the time of the peak speed          |
+| Steering gain             |      | Slope of best fitted line of posture vs trajectory at the time of the peak speed          |
+| Early rotation            | deg  | Change of pitch angle from initial (250 ms before) to 50 ms before time of the peak speed |
+| Attack angle              | deg  | Deviation of bout trajectory from pitch at time of the peak speed                         |
+| Fin-body ratio            |      | Maximal slope of best fitted sigmoid of attack angle vs early rotation                    |
+| Righting rotation         | deg  | Change of pitch angle from time of the peak speed to post bout (100 ms after peak speed)  |
+| Righting gain             |      | Numeric inversion of the slope of best fitted line of righting rotation vs initial pitch  |
+| Set piont                 | deg  | x intersect of best fitted line of righting rotation vs initial pitch                     |
 
 ## License
 

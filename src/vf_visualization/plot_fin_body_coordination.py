@@ -36,32 +36,15 @@ from astropy.stats import jackknife_resampling
 from scipy.optimize import curve_fit
 from plot_functions.get_index import (get_index, get_frame_rate)
 from plot_functions.plt_tools import (set_font_type, day_night_split)
+from plot_functions.plt_v4 import (extract_bout_features_v4)
+
 # %%
 def sigmoid_fit(df, x_range_to_fit,func,**kwargs):
     lower_bounds = [0.1,-20,-100,1]
     upper_bounds = [5,20,2,100]
     x0=[0.1, 1, -1, 20]
-    
-    for key, value in kwargs.items():
-        if key == 'a':
-            x0[0] = value
-            lower_bounds[0] = value-0.01
-            upper_bounds[0] = value+0.01
-        elif key == 'b':
-            x0[1] = value
-            lower_bounds[1] = value-0.01
-            upper_bounds[1] = value+0.01
-        elif key == 'c':
-            x0[2] = value
-            lower_bounds[2] = value-0.01
-            upper_bounds[2] = value+0.01
-        elif key =='d':
-            x0[3] = value
-            lower_bounds[3] = value-0.01
-            upper_bounds[3] = value+0.01
-            
     p0 = tuple(x0)
-    popt, pcov = curve_fit(func, df['posture_chg'], df['atk_ang'], 
+    popt, pcov = curve_fit(func, df['rot_early'], df['atk_ang'], 
                         #    maxfev=2000, 
                            p0 = p0,
                            bounds=(lower_bounds,upper_bounds))
@@ -84,7 +67,7 @@ def distribution_binned_average(df, by_col, bin_col, bin):
 
 
 # %%
-def plot_atk_ang_posture_chg(root, **kwargs):
+def plot_atk_ang_rotation(root, **kwargs):
     print('\n- Plotting atk angle and fin-body ratio')
 
     if_sample = False
@@ -113,9 +96,12 @@ def plot_atk_ang_posture_chg(root, **kwargs):
     # main function
     # CONSTANTS
     X_RANGE = np.arange(-2,10.01,0.01)
-    BIN_WIDTH = 0.3
+    BIN_WIDTH = 0.4
     AVERAGE_BIN = np.arange(min(X_RANGE),max(X_RANGE),BIN_WIDTH)
 
+    T_start = -0.3
+    T_end = 0.25
+    
     # for each sub-folder, get the path
     all_dir = [ele[0] for ele in os.walk(root)]
     if len(all_dir) > 1:
@@ -133,11 +119,9 @@ def plot_atk_ang_posture_chg(root, **kwargs):
         FRAME_RATE = int(input("Frame rate? "))
 
     peak_idx, total_aligned = get_index(FRAME_RATE)
-    T_pre_chg_start = 0.25  #s before peak
-    T_pre_chg_end = 0.1 #s before peak
-    idx_T_pre_rot_start = int(T_pre_chg_start * FRAME_RATE)
-    idx_T_pre_rot_end = int(T_pre_chg_end * FRAME_RATE)
-
+    idx_start = int(peak_idx + T_start * FRAME_RATE)
+    idx_end = int(peak_idx + T_end * FRAME_RATE)
+    idxRANGE = [idx_start,idx_end]
     # %%
     # initialize results dataframe
 
@@ -145,34 +129,30 @@ def plot_atk_ang_posture_chg(root, **kwargs):
     mean_data = pd.DataFrame()
     all_dir.sort()
     for expNum, exp_path in enumerate(all_dir):
-        exp_data = pd.read_hdf(f"{exp_path}/bout_data.h5", key='prop_bout_aligned').loc[:,['propBoutAligned_pitch','propBoutAligned_speed']]
+        rows = []
+        exp_data = pd.read_hdf(f"{exp_path}/bout_data.h5", key='prop_bout_aligned')
         exp_data = exp_data.assign(idx=int(len(exp_data)/total_aligned)*list(range(0,total_aligned)))
-        peak_angles = exp_data.loc[exp_data['idx']==peak_idx]
-        bout_attributes = pd.read_hdf(f"{exp_path}/bout_data.h5", key='prop_bout2').loc[:,['aligned_time','epochBouts_trajectory']]
-        peak_angles = peak_angles.assign(
-            time = bout_attributes['aligned_time'].values,
-            heading = bout_attributes['epochBouts_trajectory'].values,
-            )  # peak angle
+
+        # - get the index of the rows in exp_data to keep (for each bout, there are range(0:51) frames. keep range(20:41) frames)
+        bout_time = pd.read_hdf(f"{exp_path}/bout_data.h5", key='prop_bout2').loc[:,'aligned_time']
         
-        peak_angles_day = day_night_split(peak_angles, 'time')
-        # # filter for angles meet the condition
-        # peak_angles_day = peak_angles_day.loc[(peak_angles_day['heading']<70) & 
-        #                                         (peak_angles_day['heading']>-70)]
-
-        # calculate individual attack angles (heading - pitch)
-        atk_ang = peak_angles_day['heading'] - peak_angles_day['propBoutAligned_pitch']
-
-        # get indices of bout peak (for posture change calculation)
-        idx_at_peak = peak_angles_day.index
-        posture_chg = exp_data.loc[idx_at_peak-idx_T_pre_rot_end, 'propBoutAligned_pitch'].values - exp_data.loc[idx_at_peak-idx_T_pre_rot_start, 'propBoutAligned_pitch']
-
-        for_fit = pd.DataFrame(data={'atk_ang':atk_ang.values, 
-                                    'posture_chg':posture_chg.values, 
-                                    'heading':peak_angles_day['heading'], 
-                                    'pitch':peak_angles_day['propBoutAligned_pitch'],
-                                    'speed':peak_angles_day['propBoutAligned_speed'],
-                                    'expNum':expNum,
-                                })
+        # truncate first, just incase some aligned bouts aren't complete
+        for i in bout_time.index:
+            rows.extend(list(range(i*total_aligned+int(idxRANGE[0]),i*total_aligned+int(idxRANGE[1]))))
+        
+        # assign bout numbers
+        trunc_exp_data = exp_data.loc[rows,:]
+        # trunc_exp_data = trunc_exp_data.assign(
+        #     bout_num = trunc_exp_data.groupby(np.arange(len(trunc_exp_data))//(idxRANGE[1]-idxRANGE[0])).ngroup()
+        # )
+        bout_feature = extract_bout_features_v4(trunc_exp_data,peak_idx,FRAME_RATE)
+        bout_feature = bout_feature.assign(
+            bout_time = bout_time.values,
+            expNum = expNum,
+        )
+        # day night split. also assign ztime column
+        for_fit = day_night_split(bout_feature,'bout_time')
+        
         if if_sample == True:
             try:
                 for_fit = for_fit.sample(n=SAMPLE_N)
@@ -181,22 +161,23 @@ def plot_atk_ang_posture_chg(root, **kwargs):
         all_for_fit = pd.concat([all_for_fit, for_fit], ignore_index=True)
 
     # clean up
-    all_for_fit.drop(all_for_fit[all_for_fit['speed']<7].index, inplace=True)
+    all_for_fit.drop(all_for_fit[all_for_fit['spd_peak']<7].index, inplace=True)
     # %%
     # sigmoid fit
-    df = all_for_fit.loc[:,['atk_ang','posture_chg']]
+    df = all_for_fit.loc[:,['atk_ang','rot_early']]
     coef_master, fitted_y_master, sigma_master = sigmoid_fit(
         df, X_RANGE, func=sigfunc_4free
         )
     g = sns.lineplot(x='x',y=fitted_y_master[0],data=fitted_y_master)
-    binned_df = distribution_binned_average(df,by_col='posture_chg',bin_col='atk_ang',bin=AVERAGE_BIN)
+    binned_df = distribution_binned_average(df,by_col='rot_early',bin_col='atk_ang',bin=AVERAGE_BIN)
     
-    g = sns.lineplot(x='posture_chg',y='atk_ang',
-                        data=binned_df,color='grey')
-    g.set_xlabel("Posture change (deg)")
+    g = sns.lineplot(x='rot_early',y='atk_ang',
+                        data=binned_df,
+                        color='grey')
+    g.set_xlabel("Rotation (deg)")
     g.set_ylabel("Attack angle (deg)")
 
-    filename = os.path.join(fig_dir,"attack angle vs pre-bout rotation.pdf")
+    filename = os.path.join(fig_dir,"attack angle vs rotation.pdf")
     plt.savefig(filename,format='PDF')
     plt.close()
 
@@ -217,7 +198,7 @@ def plot_atk_ang_posture_chg(root, **kwargs):
         jackknife_idx = jackknife_resampling(np.arange(0,expNum+1))
         for excluded_exp, idx_group in enumerate(jackknife_idx):
             this_data = all_for_fit.loc[all_for_fit['expNum'].isin(idx_group)]
-            df = this_data.loc[:,['atk_ang','posture_chg']]  # filter for the data you want to use for calculation
+            df = this_data.loc[:,['atk_ang','rot_early']]  # filter for the data you want to use for calculation
             this_coef, this_y, this_sigma = sigmoid_fit(
                 df, X_RANGE, func=sigfunc_4free, 
             )
@@ -241,12 +222,12 @@ def plot_atk_ang_posture_chg(root, **kwargs):
         g = sns.lineplot(x='x',y=jackknife_y[0],data=jackknife_y,
                         err_style="band", ci='sd'
                         )
-        g = sns.lineplot(x='posture_chg',y='atk_ang',
+        g = sns.lineplot(x='rot_early',y='atk_ang',
                             data=binned_df,color='grey')
-        g.set_xlabel("Posture change (deg)")
+        g.set_xlabel("Rotation (deg)")
         g.set_ylabel("Attack angle (deg)")
 
-        filename = os.path.join(fig_dir,"attack angle vs pre-bout rotation (jackknife).pdf")
+        filename = os.path.join(fig_dir,"attack angle vs rotation (jackknife).pdf")
         plt.savefig(filename,format='PDF')
         plt.close()
     
@@ -263,6 +244,17 @@ def plot_atk_ang_posture_chg(root, **kwargs):
     plt.savefig(filename,format='PDF')
     plt.close()
     
+    # rotation
+    mean_data = all_for_fit.groupby('expNum').mean()
+    mean_data = mean_data.reset_index()
+
+    p = sns.pointplot(data=mean_data,
+                    y='rot_early',
+                    hue='expNum')
+    p.set_ylabel("Early rotation")
+    filename = os.path.join(fig_dir,"Early rotation.pdf")
+    plt.savefig(filename,format='PDF')
+    plt.close()
     # %% 
     # Slope
     p = sns.pointplot(data=slope,
@@ -277,4 +269,4 @@ def plot_atk_ang_posture_chg(root, **kwargs):
 if __name__ == "__main__":
     # if to use Command Line Inputs
     root = input("- Data directory? \n")
-    plot_atk_ang_posture_chg(root)
+    plot_atk_ang_rotation(root)

@@ -8,17 +8,14 @@ def get_figure_dir(which_figure):
 def get_data_dir(pick_data):
     # folder_dir = os.getcwd()
     # fig_dir = os.path.join(folder_dir, 'figures', 'Manuscript figures')
-    if pick_data == 'tan':
-        root = "/Volumes/LabData/manuscript data/2022-07 VF method/behavior data/partial_data_for_ana/TAN_lesion"
-        fr = 40    
-    elif pick_data == 'otog':
-        root = "/Volumes/LabData/manuscript data/2022-07 VF method/behavior data/partial_data_for_ana/otog"
-        fr = 166
-    elif pick_data == '7dd':
-        root = "/Volumes/LabData/manuscript data/2022-07 VF method/behavior data/partial_data_for_ana/DD_07dpf"
+    if pick_data == 'all_7dd':
+        root = "/Volumes/LabData/manuscript data/2022-09 VF method v2/behavior data/DD_7dpf_combined"
+        fr = 166    
+    elif pick_data == 'finless':
+        root = "/Volumes/LabData/manuscript data/2022-09 VF method v2/behavior data/DD_finless"
         fr = 166  
-    elif pick_data == 'wt_7dd':
-        root = "/Volumes/LabData/manuscript data/2022-07 VF method/behavior data/WT_DD_7dpf"
+    elif pick_data == '7dd_bkg':
+        root = "/Volumes/LabData/manuscript data/2022-09 VF method v2/behavior data/DD_7dpf_bkg"
         fr = 166
     elif pick_data == 'tmp':
         root = input("Dir? ")

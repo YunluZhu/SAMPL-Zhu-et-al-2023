@@ -5,6 +5,8 @@ import numpy as np
 
 def set_font_type():
     mpl.rcParams['pdf.fonttype'] = 42
+    # get_ipython().run_line_magic('matplotlib', 'inline')
+
     
 def defaultPlotting(**kwargs):
     font_size = 12
@@ -59,3 +61,10 @@ def distribution_binned_average(df, by_col, bin_col, bin):
     df_out = grp[[by_col,bin_col]].mean()
     df_std = grp[[by_col,bin_col]].sem()
     return df_out, df_std
+
+def distribution_binned_average_nostd(df, by_col, bin_col, bin):
+    df = df.sort_values(by=by_col)
+    bins = pd.cut(df[by_col], list(bin))
+    grp = df.groupby(bins)
+    df_out = grp[[by_col,bin_col]].mean()
+    return df_out
