@@ -217,19 +217,19 @@ def get_bout_kinetics(root, FRAME_RATE,**kwargs):
                     bout_features = pd.concat([bout_features,this_ztime_exp_features])
                     bout_kinetics = pd.concat([bout_kinetics,this_exp_kinetics], ignore_index=True)
                 
-            # combine data from different conditions
-            cond1 = all_conditions[condition_idx].split("_")[0]
-            cond2 = all_conditions[condition_idx].split("_")[1]
-            all_cond1.append(cond1)
-            all_cond2.append(cond2)
-            all_feature_cond = pd.concat([all_feature_cond, bout_features.assign(
-                dpf=cond1,
-                condition=cond2
-                )])
-            all_kinetic_cond = pd.concat([all_kinetic_cond, bout_kinetics.assign(
-                dpf=cond1,
-                condition=cond2
-                )])
+        # combine data from different conditions
+        cond1 = all_conditions[condition_idx].split("_")[0]
+        cond2 = all_conditions[condition_idx].split("_")[1]
+        all_cond1.append(cond1)
+        all_cond2.append(cond2)
+        all_feature_cond = pd.concat([all_feature_cond, bout_features.assign(
+            dpf=cond1,
+            condition=cond2
+            )])
+        all_kinetic_cond = pd.concat([all_kinetic_cond, bout_kinetics.assign(
+            dpf=cond1,
+            condition=cond2
+            )])
     all_cond1 = list(set(all_cond1))
     all_cond1.sort()
     all_cond2 = list(set(all_cond2))
