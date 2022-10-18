@@ -94,9 +94,35 @@ def parabola_fit1(df, X_RANGE_to_fit = X_RANGE_FULL):
 # %%
 IBI_angles, cond1_all, cond2_all= get_IBIangles(root, FRAME_RATE, ztime=which_ztime)
 IBI_angles = IBI_angles.assign(bout_freq=1/IBI_angles['propBoutIEI'])
-# IBI_angles = IBI_angles.loc[IBI_angles['bout_freq']<frequency_th]
-# IBI_angles = IBI_angles.loc[IBI_angles['propBoutIEI_angVel'].abs()<30]
-# IBI_angles = IBI_angles.loc[IBI_angles['propBoutIEI_pitch'].abs()<65]
+
+
+# %% distribution of IBI
+toplt = IBI_angles
+all_features = ['propBoutIEI_pitch','propBoutIEI']
+for feature_toplt in (all_features):
+    # let's add unit
+    if 'pitch' in feature_toplt:
+        xlabel = "IBI pitch (deg)"
+    else:
+        xlabel = "Inter-bout interval (s)"
+    plt.figure(figsize=(3,2))
+    upper = np.nanpercentile(toplt[feature_toplt], 99.5)
+    lower = np.nanpercentile(toplt[feature_toplt], 0.5)
+    
+    g = sns.histplot(data=toplt, x=feature_toplt, 
+                        bins = 20, 
+                        element="poly",
+                        #  kde=True, 
+                        stat="probability",
+                        pthresh=0.05,
+                        binrange=(lower,upper),
+                        color='grey'
+                        )
+    g.set_xlabel(xlabel)
+    sns.despine()
+    plt.savefig(fig_dir+f"/{feature_toplt} distribution.pdf",format='PDF')
+
+
 
 # %%
 # Distribution plot, bout frequency vs IBI pitch

@@ -38,7 +38,7 @@ def plot_save_histogram(toplt,feature_toplt,xlabel,fig_dir):
                         bins = 20, 
                         element="poly",
                         #  kde=True, 
-                        stat="density",
+                        stat="probability",
                         pthresh=0.05,
                         binrange=(lower,upper)
                         )
@@ -150,7 +150,7 @@ def plot_parameters(root):
     toplt = bout_features
     cat_cols = ['exp_num']
 
-    # plot 1d density/histogram
+    # plot 1d probability/histogram
     all_features = [c for c in toplt.columns if c not in cat_cols]
     for feature_toplt in (all_features):
         # let's add unit

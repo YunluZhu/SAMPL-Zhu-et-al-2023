@@ -1,5 +1,5 @@
 '''
-This script plots bout frequency as a function of pitch angle
+This script plots bout frequency as a function of IBI pitch angle
 and fiitted coefs of function y = a * ((x-b)**2) + c (jackknife resampling is applied if contains data from multiple experiments)
 
 This script takes two types of directory:

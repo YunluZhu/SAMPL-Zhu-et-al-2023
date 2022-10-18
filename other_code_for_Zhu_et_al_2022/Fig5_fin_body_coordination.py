@@ -13,8 +13,9 @@ from scipy.optimize import curve_fit
 from plot_functions.get_index import (get_index)
 from plot_functions.get_data_dir import (get_data_dir, get_figure_dir)
 from plot_functions.get_bout_features import get_bout_features
-from plot_functions.plt_tools import (set_font_type, defaultPlotting,distribution_binned_average)
+from plot_functions.plt_tools import (set_font_type, defaultPlotting,distribution_binned_average,distribution_binned_average_nostd)
 import scipy.stats as st
+from scipy import stats
 
 
 # %%
@@ -89,7 +90,7 @@ AVERAGE_BIN = np.arange(min(X_RANGE),max(X_RANGE),BIN_WIDTH)
 all_feature_cond, all_cond1, all_cond2 = get_bout_features(root, FRAME_RATE)
 all_feature_cond = all_feature_cond.reset_index(drop=True)
 # %%
-print("Figure 5: Distribution of early body rotation and attack angle")
+print("- Figure 5: Distribution of early body rotation and attack angle")
 feature_to_plt = ['rot_early','atk_ang']
 toplt = all_feature_cond
 
@@ -129,8 +130,66 @@ if FRAME_RATE > 100:
 elif FRAME_RATE == 40:
     all_feature_cond.drop(all_feature_cond[all_feature_cond['spd_peak']<4].index, inplace=True)
 
+# %% 5D
+print("- Figure 5: correlation of attack angle with rotation and rotation residual")
+toplt = all_feature_cond
+plt_dict = {
+    'early_rotation vs atk_ang':['rot_early','atk_ang'],
+    'late_rotation vs atk_ang':['rot_late_accel','atk_ang'],
+}
+
+for which_to_plot in plt_dict:
+    [x,y] = plt_dict[which_to_plot]
+
+    upper = np.percentile(toplt[x], 99)
+    lower = np.percentile(toplt[x], 1)
+    BIN_WIDTH = 1
+    AVERAGE_BIN = np.arange(int(lower),int(upper),BIN_WIDTH)
+    binned_df = toplt.groupby(['condition','dpf']).apply(
+        lambda group: distribution_binned_average_nostd(group,by_col=x,bin_col=y,bin=AVERAGE_BIN)
+    )
+    binned_df.columns=[x,y]
+    binned_df = binned_df.reset_index(level=['dpf','condition'])
+    binned_df = binned_df.reset_index(drop=True)
+
+    # xlabel = "Relative pitch change (deg)"
+    # ylabel = 'Trajectory deviation (deg)'
+ 
+    g = sns.relplot(
+        kind='scatter',
+        data = toplt.sample(frac=0.5),
+        row='condition',
+        col = 'dpf',
+        col_order = all_cond1,
+        row_order = all_cond2,
+        x = x,
+        y = y,
+        alpha=0.1,
+        linewidth = 0,
+        color = 'grey',
+        height=3,
+        aspect=2/2,
+        )
+    for i , g_row in enumerate(g.axes):
+        for j, ax in enumerate(g_row):
+            sns.lineplot(data=binned_df.loc[(binned_df['dpf']==all_cond1[j]) & 
+                                            (binned_df['condition']==all_cond2[i])], 
+                        x=x, y=y, 
+                        hue='condition',alpha=1,
+                        ax=ax)
+    
+    g.set(ylim=(-15,20))
+    g.set(xlim=(lower,upper))
+    
+    # g.set_axis_labels(x_var = xlabel, y_var = ylabel)
+    sns.despine()
+    plt.savefig(fig_dir+f"/{x} {y} correlation.pdf",format='PDF')
+    r_val = stats.pearsonr(toplt[x],toplt[y])[0]
+    print(f"pearson's r = {r_val}")
+    
+    
 # %% fit sigmoid - master
-print("Figure 5: Fin-body ratio")
+print("- Figure 5: Fin-body ratio")
 
 all_coef = pd.DataFrame()
 all_y = pd.DataFrame()
@@ -247,7 +306,7 @@ plt.savefig(filename,format='PDF')
 #     plt.savefig(filename,format='PDF')
 # %%
 # plot CI of slope
-print("Figure supp - CI width vs sample size - max slope of fin-body ratio")
+print("- Figure supp - CI width vs sample size - max slope of fin-body ratio")
 list_of_sample_N = np.arange(1000,len(all_feature_cond),1000)
 repeated_res = pd.DataFrame()
 num_of_repeats = 20

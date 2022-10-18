@@ -1,8 +1,8 @@
 '''
-Attack angles, pre-bout posture change, and fin-body ratio
+Attack angles, rotation, and fin-body ratio
 https://elifesciences.org/articles/45839
 
-This script calculates attack angles and pre-bout posture change and generates the fin-body ratio using a sigmoid fit
+This script calculates attack angles and rotation and generates the fin-body ratio using a sigmoid fit
 
 This script takes two types of directory:
 1. A directory with analyzed dlm data

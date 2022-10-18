@@ -31,16 +31,9 @@ folder_name = f'{pick_data} parameter distribution'
 folder_dir2 = get_figure_dir('Fig_2')
 fig_dir2 = os.path.join(folder_dir2, folder_name)
 
-folder_name = f'{pick_data} kinetics'
-folder_dir4 = get_figure_dir('Fig_4')
-fig_dir4 = os.path.join(folder_dir4, folder_name)
 
 try:
     os.makedirs(fig_dir2)
-except:
-    pass
-try:
-    os.makedirs(fig_dir4)
 except:
     pass
 # %% get features
@@ -49,9 +42,9 @@ all_ibi_cond, _, _  = get_IBIangles(root, FRAME_RATE, ztime=which_ztime)
 # %% tidy data
 
 all_feature_cond = all_feature_cond.sort_values(by=['condition','expNum']).reset_index(drop=True)
-all_ibi_cond = all_ibi_cond.sort_values(by=['condition','expNum']).reset_index(drop=True)
+# all_ibi_cond = all_ibi_cond.sort_values(by=['condition','expNum']).reset_index(drop=True)
 
-all_ibi_cond = all_ibi_cond.assign(y_boutFreq=1/all_ibi_cond['propBoutIEI'])
+# all_ibi_cond = all_ibi_cond.assign(y_boutFreq=1/all_ibi_cond['propBoutIEI'])
 
 all_feature_UD = all_feature_cond
 
@@ -59,7 +52,7 @@ all_feature_UD = all_feature_cond
 # Plot parameter distribution
 print("Figure 2: Distribution of parameters")
 toplt = all_feature_UD
-feature_to_plt = ['pitch_initial','pitch_end','pitch_post_bout','spd_peak','rot_total','traj_peak',
+feature_to_plt = ['pitch_initial','pitch_peak','pitch_post_bout','spd_peak','rot_total','traj_peak',
                   'bout_displ','bout_traj']
 
 for feature in feature_to_plt:
@@ -89,31 +82,7 @@ for feature in feature_to_plt:
     plt.savefig(fig_dir2+f"/{feature} distribution.pdf",format='PDF')
     # plt.close()
     
-# inter bout interval data
-toplt = all_ibi_cond
-all_features = ['propBoutIEI_pitch','propBoutIEI']
-for feature_toplt in (all_features):
-    # let's add unit
-    if 'pitch' in feature_toplt:
-        xlabel = "IBI pitch (deg)"
-    else:
-        xlabel = "Inter-bout interval (s)"
-    plt.figure(figsize=(3,2))
-    upper = np.nanpercentile(toplt[feature_toplt], 99.5)
-    lower = np.nanpercentile(toplt[feature_toplt], 0.5)
-    
-    g = sns.histplot(data=toplt, x=feature_toplt, 
-                        bins = 20, 
-                        element="poly",
-                        #  kde=True, 
-                        stat="probability",
-                        pthresh=0.05,
-                        binrange=(lower,upper),
-                        color='grey'
-                        )
-    g.set_xlabel(xlabel)
-    sns.despine()
-    plt.savefig(fig_dir2+f"/{feature_toplt} distribution.pdf",format='PDF')
+
     # plt.close()
 
 

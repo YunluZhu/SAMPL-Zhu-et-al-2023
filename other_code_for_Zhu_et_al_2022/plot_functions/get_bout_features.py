@@ -94,7 +94,7 @@ def extract_bout_features_v4(bout_data,peak_idx, FRAME_RATE):
                                                 rot_early = pitch_mid_accel-this_exp_features['pitch_initial'],
                                                 bout_traj = epochBouts_trajectory,
                                                 bout_displ = displ,
-                                                # tsp_pre = this_exp_features['traj_pre_bout'] - this_exp_features['pitch_pre_bout'],
+                                                tsp_peak = this_exp_features['traj_peak'] - this_exp_features['pitch_peak'],
                                                 atk_ang = this_exp_features['traj_peak'] - this_exp_features['pitch_peak'],
                                                 angvel_chg = this_exp_features['angvel_post_phase'] - this_exp_features['angvel_initial_phase'] 
                                                 )  
