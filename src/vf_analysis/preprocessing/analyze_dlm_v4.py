@@ -1,23 +1,3 @@
-'''
-Analyze Free Vertical (YZ 2021.06.18)
-- Functions:
-    1. Takes one raw dataframe, reslice epochs based on epoch number and fish number (210618 UPDATE)
-    2. Truncate
-    3. Calculate and filter for epoch duration, displacement, headx-x moving direction, angular velocity, angular acceleration 
-    4. Add a distance filter
-    5. Return an analyzed dataframe and a fish length dataframe
-- Includes: 
-    1. analyzeFreeVerticalGrouped2 (by DEE)
-    2. angular acceleration filter in GrabFishAngelAll
-- Purpose of Python version by YZ:
-    1. Rewrite of analyzeFreeVerticalGrouped2.m & GrabFishAngleAll.m for faster runtime (5s per .dlm)
-    3. Adjust filters:
-- Notes:
-    1. Results of filtered epochs may be slightly different from Matlab results, due to the angVel smooth function
-        Matlab smooth handles top/end values differently. Here, top values without enought window (smooth span) are returned as NA
-    2. Due to the float64 data type, calculations are more accurate in Python version.
-    
-'''
 # %%
 # Import Modules and functions
 import pandas as pd # pandas library
@@ -136,6 +116,24 @@ def displ_dist_vel_filter(df,MAX_DIST_TRAVEL):
 # %%
 # Main function
 def analyze_dlm_resliced(raw, file_i, file, folder, frame_rate):
+    """
+    Analyze Free Vertical (YZ 2021.06.18)
+    1. Truncate epochs
+    3. Calculate and filter for epoch duration, displacement, headx-x moving direction, angular velocity, angular acceleration 
+    4. Add a distance filter
+    5. Return an analyzed dataframe and a fish length dataframe
+
+    Args:
+        raw (DataFrame): .dlm in a dataframe
+        file_i (int): file index
+        file (string): .dlm directory
+        folder (string): directory of folder containing the current dlm
+        frame_rate (int): frame rate
+
+    Returns:
+        DataFrame: scaled epochs contain quality bouts
+        DataFrame: estimated fish length
+    """
     # Constants
     MAX_DELTA_T = 3/frame_rate   # in s, epochs with inexplicably large gaps between frame timestamps
     MIN_DUR = 2.5 * frame_rate  # 2.5s, minimun duration of epochs     
@@ -252,6 +250,4 @@ def analyze_dlm_resliced(raw, file_i, file, folder, frame_rate):
     print(f" {len(grp_by_epoch(res).size())} epochs extracted", end=' ')
 
     return res, fish_length
-
-
 

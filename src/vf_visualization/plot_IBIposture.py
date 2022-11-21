@@ -1,5 +1,5 @@
 '''
-Plot Inter Bout Interval (IBI or IEI) posture distribution and standard deviation
+Plot Inter Bout Interval (IBI) posture distribution and standard deviation
 
 This scripts looks for "prop_Bout_IEI2" in the "prop_bout_IEI_pitch" data which includes mean of body angles during IEI
 
@@ -33,6 +33,12 @@ from astropy.stats import jackknife_resampling
 from plot_functions.plt_tools import (set_font_type, day_night_split, defaultPlotting)
 
 def plot_IBIposture(root, **kwargs):
+    """Plot Inter Bout Interval (IBI) posture distribution and standard deviation
+
+    Args:
+        root (string): directory
+        sample_bout (int): bouts to sample from each exp repeat
+    """
     print('\n- Plotting inter-bout-interval posture')
     # generate figure folder
     folder_name = 'IBI posture'
@@ -44,7 +50,7 @@ def plot_IBIposture(root, **kwargs):
     
     for key, value in kwargs.items():
         if key == 'sample_bout':
-            SAMPLE_N = value
+            SAMPLE_N = int(value)
     if SAMPLE_N == -1:
         SAMPLE_N = int(input("How many bouts to sample from each dataset? ('0' for no sampling): "))
     if SAMPLE_N > 0:
@@ -122,7 +128,7 @@ def plot_IBIposture(root, **kwargs):
     g = sns.lineplot(x='Posture (deg)',
                      y='Probability', 
                      data=ang_distribution, 
-                     ci='sd', err_style='band')
+                     errorbar='sd', err_style='band')
     g.set_xticks(np.arange(-90,135,45))  # adjust x ticks
     filename = os.path.join(fig_dir, "inter bout interval pitch distribution.pdf")
     plt.savefig(filename,format='PDF')
@@ -140,13 +146,18 @@ def plot_IBIposture(root, **kwargs):
         g = sns.catplot(data = ang_std,y = 'Std of posture',
                         height=4, aspect=0.8, kind='point',
                         markers='d',sharey=False,
-                        zorder=10
+                        # zorder=10
                         )
         g = sns.despine(trim=False)
         filename = os.path.join(fig_dir, "inter-bout interval std(pitch).pdf")
         plt.savefig(filename,format='PDF')
+        
+        mean_val = ang_std.mean()
+        filename = os.path.join(fig_dir,f"mean jackknifed std of IBI pitch.csv")
+        mean_val.to_csv(filename)
+        print(f"Standard deviation of posture = {mean_val.at['Std of posture']}")
     else:
-        print(f"Standard deviation of posture is: {ang_std}")    
+        print(f"Standard deviation of posture = {ang_std}")    
     
 
 if __name__ == "__main__":

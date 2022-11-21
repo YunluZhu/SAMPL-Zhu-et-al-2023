@@ -37,16 +37,19 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+from plot_functions.plt_tools import round_half_up
 from plot_functions.get_index import (get_index, get_frame_rate)
 from plot_functions.plt_tools import (set_font_type, day_night_split)
 from tqdm import tqdm
 
 # %%
 def plot_aligned(root):
-    '''
-    plots parameters of bouts aligned at the time of the peak speed.
-    Input directory needs to be a folder containing analyzed dlm data.
-    '''
+    """plots parameters of bouts aligned at the time of the peak speed.
+
+    Args:
+        root (string): a directory containing analyzed dlm data.
+
+    """
     print('\n- Plotting parameter time series (mean ± SD).')
 
     # %%
@@ -106,13 +109,13 @@ def plot_aligned(root):
         FRAME_RATE = get_frame_rate(all_dir[0])
     except:
         print("No info file found!\n")
-        FRAME_RATE = int(input("Frame rate? "))
+        FRAME_RATE = round_half_up(input("Frame rate? "))
 
     # get the index for the time of peak speed, and total time points for each aligned bout
     peak_idx, total_aligned = get_index(FRAME_RATE)
 
     # calculate indicies
-    idxRANGE = [peak_idx-int(BEFORE_PEAK*FRAME_RATE),peak_idx+int(AFTER_PEAK*FRAME_RATE)]
+    idxRANGE = [peak_idx-round_half_up(BEFORE_PEAK*FRAME_RATE),peak_idx+round_half_up(AFTER_PEAK*FRAME_RATE)]
     
     exp_data_all = pd.DataFrame()
     for exp_num, exp_path in enumerate(all_dir):
@@ -125,7 +128,7 @@ def plot_aligned(root):
         exp_data = exp_data.loc[:,all_features.keys()]
         exp_data = exp_data.rename(columns=all_features)
         # assign frame number, total_aligned frames per bout
-        exp_data = exp_data.assign(idx=int(len(exp_data)/total_aligned)*list(range(0,total_aligned)))
+        exp_data = exp_data.assign(idx=round_half_up(len(exp_data)/total_aligned)*list(range(0,total_aligned)))
 
         # - get the index of the rows in exp_data to keep
         bout_time = pd.read_hdf(f"{exp_path}/bout_data.h5", key='prop_bout2').loc[:,['aligned_time']]
@@ -140,9 +143,9 @@ def plot_aligned(root):
     # %%
     # separate up and down by set_point
     exp_data_all
-    pitch_pre_bout = exp_data_all.loc[exp_data_all.idx==int(peak_idx - 0.1 * FRAME_RATE),'pitch (deg)'].values
-    pitch_peak = exp_data_all.loc[exp_data_all.idx==int(peak_idx),'pitch (deg)']
-    pitch_post_bout = exp_data_all.loc[exp_data_all.idx==int(peak_idx + 0.1 * FRAME_RATE),'pitch (deg)'].values
+    pitch_pre_bout = exp_data_all.loc[exp_data_all.idx==round_half_up(peak_idx - 0.1 * FRAME_RATE),'pitch (deg)'].values
+    pitch_peak = exp_data_all.loc[exp_data_all.idx==round_half_up(peak_idx),'pitch (deg)']
+    pitch_post_bout = exp_data_all.loc[exp_data_all.idx==round_half_up(peak_idx + 0.1 * FRAME_RATE),'pitch (deg)'].values
     rot_l_decel = pitch_post_bout - pitch_peak
     bout_features = pd.DataFrame(data={'pitch_pre_bout':pitch_pre_bout,'rot_l_decel':rot_l_decel})
     separation_pitch = 10
@@ -163,29 +166,33 @@ def plot_aligned(root):
         p = sns.relplot(
                 data = exp_data_all, x = 'time_s', y = feature_toplt,
                 col='direction',
-                kind = 'line',aspect=3, height=2, ci='sd'
+                kind = 'line',aspect=3, height=2, errorbar='sd'
                 )
         p.map(
-            plt.axvline, x=0, linewidth=1, color=".3", zorder=0
+            plt.axvline, x=0, linewidth=1, color=".3", 
+            # zorder=0
             )
         plt.savefig(os.path.join(fig_dir, f"{feature_toplt}_timeSeries_up_dn.pdf"),format='PDF')
     print("Mean bout parameters")
     for feature_toplt in tqdm(list(all_features.values())):
         p = sns.relplot(
                 data = exp_data_all, x = 'time_s', y = feature_toplt,
-                kind = 'line',aspect=3, height=2, ci='sd'
+                kind = 'line',aspect=3, height=2, errorbar='sd'
                 )
         p.map(
-            plt.axvline, x=0, linewidth=1, color=".3", zorder=0
+            plt.axvline, x=0, linewidth=1, color=".3", 
+            # zorder=0
             )
         plt.savefig(os.path.join(fig_dir, f"{feature_toplt}_timeSeries.pdf"),format='PDF')
 
 # %%
 def plot_raw(root):
-    '''
-    Plots single epoch that contains one or more bouts
-    Input directory needs to be a folder containing analyzed dlm data.
-    '''
+    """Plots single epoch that contains one or more bouts
+
+    Args:
+        root (string): a directory containing analyzed dlm data.
+
+    """
     print('\n- Plotting time series (raw)')
 
     # %% features for plotting
@@ -233,7 +240,7 @@ def plot_raw(root):
         FRAME_RATE = get_frame_rate(all_dir[0])
     except:
         print("No info file found!\n")
-        FRAME_RATE = int(input("Frame rate? "))
+        FRAME_RATE = round_half_up(input("Frame rate? "))
     
     epoch_info_all = pd.DataFrame()
     epoch_data_all = pd.DataFrame()
@@ -270,9 +277,9 @@ def plot_raw(root):
     # %%
     if_plot_others = 'y'
     while if_plot_others != 'n':
-        which_toplt = int(input(f'Which epoch to plot? (1-{len(epoch_info_all)}) \n'))
+        which_toplt = round_half_up(input(f'Which epoch to plot? (1-{len(epoch_info_all)}) \n'))
         toplt = epoch_info_all.loc[which_toplt-1,:]
-        data_toplt = epoch_data_all.loc[(epoch_data_all['exp_num']==toplt['exp_num']) & (epoch_data_all['epochNum']==int(toplt['epoch_num'])), :]
+        data_toplt = epoch_data_all.loc[(epoch_data_all['exp_num']==toplt['exp_num']) & (epoch_data_all['epochNum']==round_half_up(toplt['epoch_num'])), :]
 
         # %%
         data_toplt = data_toplt.assign(
@@ -294,4 +301,4 @@ if __name__ == "__main__":
     # if to use Command Line Inputs
     root = input("- Data directory? \n")
     plot_aligned(root)
-    plot_raw(root)
+    # plot_raw(root)

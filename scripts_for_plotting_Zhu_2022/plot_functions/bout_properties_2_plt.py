@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from scipy import stats
 import math
 import scipy
-
+from plot_functions.plt_tools import round_half_up
 from scipy.stats import ttest_rel
 from scipy.stats import ttest_ind
 from scipy.optimize import curve_fit

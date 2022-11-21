@@ -3,6 +3,7 @@ import pandas as pd # pandas library
 import numpy as np # numpy
 from plot_functions.plt_tools import jackknife_list
 from scipy.stats import pearsonr 
+from plot_functions.plt_tools import round_half_up
 
 
 def extract_bout_features_v3(bout_data,peak_idx, FRAME_RATE):

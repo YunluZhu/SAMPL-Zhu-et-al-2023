@@ -25,6 +25,7 @@ import pandas as pd # pandas library
 import numpy as np # numpy
 import seaborn as sns
 import matplotlib.pyplot as plt
+from plot_functions.plt_tools import round_half_up
 from plot_functions.plt_tools import (set_font_type, defaultPlotting, day_night_split)
 from plot_functions.plt_v4 import (jackknife_kinetics, extract_bout_features_v4, get_kinetics)
 from plot_functions.get_index import (get_index, get_frame_rate)
@@ -49,6 +50,12 @@ def plot_save_histogram(toplt,feature_toplt,xlabel,fig_dir):
     plt.close()
         
 def plot_parameters(root):
+    """Plot distribution of bout parameters. Plot 2D distribution of parameters for kinetics calculation.
+
+
+    Args:
+        root (string): directory
+    """
     print('\n- Plotting bout parameters')
     # generate figure folder
     folder_name = 'parameters'
@@ -77,7 +84,7 @@ def plot_parameters(root):
         FRAME_RATE = get_frame_rate(all_dir[0])
     except:
         print("No info file found!\n")
-        FRAME_RATE = int(input("Frame rate? "))
+        FRAME_RATE = round_half_up(input("Frame rate? "))
 
     # get the index for the time of peak speed, and total time points for each aligned bout
     peak_idx, total_aligned = get_index(FRAME_RATE)
@@ -86,8 +93,8 @@ def plot_parameters(root):
     # defaultPlotting()
     T_start = -0.3
     T_end = 0.3
-    idx_start = int(peak_idx + T_start * FRAME_RATE)
-    idx_end = int(peak_idx + T_end * FRAME_RATE)
+    idx_start = round_half_up(peak_idx + T_start * FRAME_RATE)
+    idx_end = round_half_up(peak_idx + T_end * FRAME_RATE)
     idxRANGE = [idx_start,idx_end]
 
     # %%
@@ -106,13 +113,13 @@ def plot_parameters(root):
         # get pitch                
         exp_data = pd.read_hdf(f"{exp_path}/bout_data.h5", key='prop_bout_aligned')
         # assign frame number, total_aligned frames per bout
-        exp_data = exp_data.assign(idx=int(len(exp_data)/total_aligned)*list(range(0,total_aligned)))
+        exp_data = exp_data.assign(idx=round_half_up(len(exp_data)/total_aligned)*list(range(0,total_aligned)))
         
         # - get the index of the rows in exp_data to keep (for each bout, there are range(0:51) frames. keep range(20:41) frames)
         bout_time = pd.read_hdf(f"{exp_path}/bout_data.h5", key='prop_bout2').loc[:,['aligned_time']]
         # # if only need day or night bouts:
         for i in day_night_split(bout_time,'aligned_time').index:
-            rows.extend(list(range(i*total_aligned+int(idxRANGE[0]),i*total_aligned+int(idxRANGE[1]))))
+            rows.extend(list(range(i*total_aligned+round_half_up(idxRANGE[0]),i*total_aligned+round_half_up(idxRANGE[1]))))
         exp_data = exp_data.assign(expNum = exp)
         trunc_day_exp_data = exp_data.loc[rows,:]
         trunc_day_exp_data = trunc_day_exp_data.assign(
@@ -150,8 +157,15 @@ def plot_parameters(root):
     toplt = bout_features
     cat_cols = ['exp_num']
 
+
     # plot 1d probability/histogram
     all_features = [c for c in toplt.columns if c not in cat_cols]
+    
+    mean_val = bout_features[all_features].mean()
+    filename = os.path.join(fig_dir,f"parameter mean values.csv")
+    mean_val.to_csv(filename)
+    print(mean_val)
+    
     for feature_toplt in (all_features):
         # let's add unit
         if 'spd' in feature_toplt:
@@ -161,7 +175,7 @@ def plot_parameters(root):
         else:
             xlabel = feature_toplt + " (deg)"
         plot_save_histogram(toplt,feature_toplt,xlabel,fig_dir)
-
+    
     toplt = all_IBI_data
     cat_cols = ['exp_num']
     all_features = [c for c in toplt.columns if c not in cat_cols]

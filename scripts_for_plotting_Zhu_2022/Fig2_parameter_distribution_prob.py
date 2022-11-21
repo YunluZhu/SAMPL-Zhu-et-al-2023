@@ -6,6 +6,7 @@ Plot parameter correlations for calculating kinetics in Figure 3.
 #%%
 # import sys
 import os
+from plot_functions.plt_tools import round_half_up
 import pandas as pd # pandas library
 import numpy as np # numpy
 import seaborn as sns

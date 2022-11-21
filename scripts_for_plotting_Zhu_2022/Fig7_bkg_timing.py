@@ -13,6 +13,7 @@ Sampled? Yes - ONE sample number for day and night
 
 #%%
 import os
+from plot_functions.plt_tools import round_half_up
 import pandas as pd # pandas library
 import numpy as np # numpy
 import seaborn as sns
@@ -145,7 +146,7 @@ print(jackknifed_coef[coef_columns].std())
 g = sns.relplot(x='IBI pitch (deg)',y='Bout frequency (Hz)', data=jackknifed_y, 
                 kind='line',
                 col='dpf', col_order=cond1_all,
-                hue='condition', hue_order = cond2_all,ci='sd',
+                hue='condition', hue_order = cond2_all,errorbar='sd',
                 aspect=0.9 , height = 3,
                 )
 for i , g_row in enumerate(g.axes):

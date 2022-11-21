@@ -5,6 +5,7 @@ Input directory needs to be a folder containing analyzed dlm data.
 
 #%%
 from cmath import exp
+from plot_functions.plt_tools import round_half_up
 import os
 import pandas as pd 
 import numpy as np
@@ -78,8 +79,8 @@ except:
 
 # get the index for the time of peak speed, and total time points for each aligned bout
 peak_idx, total_aligned = get_index(FRAME_RATE)
-idx_dur300ms = int(0.3*FRAME_RATE)
-idx_dur250ms = int(0.25*FRAME_RATE)
+idx_dur300ms = round_half_up(0.3*FRAME_RATE)
+idx_dur250ms = round_half_up(0.25*FRAME_RATE)
 all_conditions = []
 folder_paths = []
 for folder in os.listdir(root):
@@ -87,7 +88,7 @@ for folder in os.listdir(root):
         folder_paths.append(root+'/'+folder)
         all_conditions.append(folder)
 # calculate indicies
-idxRANGE = [peak_idx-int(BEFORE_PEAK*FRAME_RATE),peak_idx+int(AFTER_PEAK*FRAME_RATE)]
+idxRANGE = [peak_idx-round_half_up(BEFORE_PEAK*FRAME_RATE),peak_idx+round_half_up(AFTER_PEAK*FRAME_RATE)]
 
 for condition_idx, folder in enumerate(folder_paths):
     # enter each condition folder (e.g. 7dd_ctrl)
@@ -104,7 +105,7 @@ for condition_idx, folder in enumerate(folder_paths):
                 raw = pd.read_hdf(f"{exp_path}/bout_data.h5", key='prop_bout_aligned')
                 # assign frame number, total_aligned frames per bout
                 raw = raw.assign(
-                    idx = int(len(raw)/total_aligned)*list(range(0,total_aligned)),
+                    idx = round_half_up(len(raw)/total_aligned)*list(range(0,total_aligned)),
                     )
                 # - get the index of the rows in exp_data to keep
                 bout_time = pd.read_hdf(f"{exp_path}/bout_data.h5", key='prop_bout2').loc[:,['aligned_time']]
@@ -148,7 +149,7 @@ for condition_idx, folder in enumerate(folder_paths):
 separation_posture = 10
 
 peak_speed = exp_data_all.loc[exp_data_all.idx==peak_idx,'speed (mm*s-1)']
-pitch_pre_bout = exp_data_all.loc[exp_data_all.idx==int(peak_idx - 0.1 * FRAME_RATE),'pitch (deg)']
+pitch_pre_bout = exp_data_all.loc[exp_data_all.idx==round_half_up(peak_idx - 0.1 * FRAME_RATE),'pitch (deg)']
 
 grp = exp_data_all.groupby(np.arange(len(exp_data_all))//(idxRANGE[1]-idxRANGE[0]))
 exp_data_all = exp_data_all.assign(
@@ -166,7 +167,7 @@ for feature_toplt in tqdm(list(all_features.values())):
     p = sns.relplot(
             data = exp_data_all, x = 'time_ms', y = feature_toplt,
             hue='direction',
-            kind = 'line',aspect=3, height=2, ci='sd',
+            kind = 'line',aspect=3, height=2, errorbar='sd',
             )
     p.map(
         plt.axvline, x=0, linewidth=1, color=".3", zorder=0
@@ -176,7 +177,7 @@ for feature_toplt in tqdm(list(all_features.values())):
 for feature_toplt in tqdm(list(all_features.values())):
     p = sns.relplot(
             data = exp_data_all, x = 'time_ms', y = feature_toplt,
-            kind = 'line',aspect=3, height=2, ci='sd'
+            kind = 'line',aspect=3, height=2, errorbar='sd'
             )
     p.map(
         plt.axvline, x=0, linewidth=1, color=".3", zorder=0

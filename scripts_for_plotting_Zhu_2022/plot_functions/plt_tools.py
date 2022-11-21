@@ -2,9 +2,24 @@ import matplotlib as mpl
 import seaborn as sns
 import pandas as pd
 import numpy as np
+from decimal import Decimal
+import decimal
+
+def round_half_up(var):
+    """round half up
+
+    Args:
+        var (string or float): value to round to int
+
+    Returns:
+        int: rounded int
+    """
+    res = int(Decimal(var).quantize(Decimal('0'), rounding=decimal.ROUND_HALF_UP))
+    return res
 
 def set_font_type():
     mpl.rcParams['pdf.fonttype'] = 42
+    mpl.rcParams['savefig.bbox'] = 'tight' 
     # get_ipython().run_line_magic('matplotlib', 'inline')
 
     

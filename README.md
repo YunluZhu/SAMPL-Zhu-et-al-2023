@@ -1,13 +1,13 @@
 # Vertical Fish Analysis (Python ver.)
 
-Code related to Zhu Y, Auer F, Ehrlich DE, Schoppik D., 2022.
+Code related to Zhu Y, Auer F, Gelnaw H, Davis S N, Hamling K R, Schoppik D, 2022.
 
 This code is for analysis and visualization of data generated using free-swimming vertical fish apparatus.
 
 ## Version notes
 
-Analysis code ver: v4.4
-Plotting code ver: v4.4
+Analysis code ver: v4.4.221110
+Plotting code ver: v4.5.221118
 
 ## Requirements
 
@@ -47,7 +47,7 @@ All the extracted swim bouts under `bout_data.h5` are aligned at the time of the
 To generate figures:
 
 1. Run individual scripts under `.../src/vf_visualization/`.
-2. Alternatively, one may run `plot all.py` to plot all figures.
+2. Alternatively, one may run `plot_all.py` to plot all figures.
 3. Figures will be saved under `.../figures`.
 
 **Visualization scripts and function** explained
@@ -61,7 +61,10 @@ To generate figures:
 - `plot_bout_timing.py` plots bout frequency as a function of pitch angle and fiitted coefs of function `y = a * ((x-b)^2) + c`. Jackknife resampling is applied if contains data from multiple experiments (subfolders under the root path). This script contains function: `plot_bout_frequency()`
 
 - `plot_kinetics.py` plots bout kinetics: righting gain, set point, steering gain. Jackknife resampling is applied if contains data from multiple experiments (subfolders under the root path). This script contains function: `plot_kinetics()`
-- `plot_fin_body_coordination.py` plots attack angle as a function of rotation and calculates the maximal slope which is termed the fin-body ratio. This script contains function: `plot_atk_ang_posture_chg()`
+
+- `plot_fin_body_coordination.py` plots attack angle as a function of rotation and calculates the maximal slope which is termed the fin-body ratio. Rotation is calculated by pitch change from -250 ms to -50 ms. This script contains function: `plot_fin_body_coordination()`
+
+- `plot_fin_body_coordination_byAngvelMax.py` plots attack angle as a function of rotation and calculates the maximal slope which is termed the fin-body ratio. Rotation is calculated by pitch change from -250 ms to time of max angular velocity. This script contains function: `plot_fin_body_coordination_byAngvelMax()`
 
 ### Parameters
 
@@ -72,21 +75,21 @@ To generate figures:
 | Initial pitch             | deg  | Pitch angle at 250 ms before the peak speed                                               |
 | Post-bout pitch           | deg  | Pitch angle at 100 ms after the peak speed                                                |
 | End pitch                 | deg  | Pitch angle at 200 ms after the peak speed                                                |
-| Acceleration phase        |      | Before time of the peak speed                                                             |
-| Deceleration phase        |      | After time of the peak speed                                                              |
-| Total rotation            | deg  | Pitch change from initial (250 ms before) to end (200 ms after) time of the peak speed    |
 | Bout trajectory           | deg  | Tangential angle of the trajectory at the time of the peak speed                          |
-| Bout displacement         | mm   | Displacement of fish from pre-bout to post-bout                                           |
-| Inter-bout interval       | s    | Duration between two adjacent swim bouts                                                  |
+| Bout displacement         | mm   | Displacement of fish when speed is greater than 4mm/s .                                   |
+| Inter-bout interval       | s    | (IBI) Duration between two adjacent swim bouts                                            |
 | Inter-bout-interval pitch | deg  | Mean pitch angle during inter-bout interval                                               |
+| Bout frequency            | Hz   | Frequency of swim bouts determined by the reciprocal of inter-bout interval               |
+| Modeling of bout timing   |      | Bout frequency plotted as a function of IBI pitch modeled with a parabola                 |
+| Sensitivity               |      | Sensitivity to pitch changes: coefficient of the quadratic term of the parabola model     |
 | Trajectory deviation      | deg  | Deviation of bout trajectory from initial pitch (250 ms before)                           |
 | Steering rotation         | deg  | Change of pitch angle from initial (250 ms before) to the time of the peak speed          |
 | Steering gain             |      | Slope of best fitted line of posture vs trajectory at the time of the peak speed          |
-| Early rotation            | deg  | Change of pitch angle from initial (250 ms before) to 50 ms before time of the peak speed |
+| Steering-related rotation | deg  | Pitch changes from initial to max angular velocity                                        |
 | Attack angle              | deg  | Deviation of bout trajectory from pitch at time of the peak speed                         |
-| Fin-body ratio            |      | Maximal slope of best fitted sigmoid of attack angle vs early rotation                    |
+| Fin-body ratio            |      | Maximal slope of best fitted sigmoid of attack angle vs steering-related rotation         |
 | Righting rotation         | deg  | Change of pitch angle from time of the peak speed to post bout (100 ms after peak speed)  |
-| Righting gain             |      | Numeric inversion of the slope of best fitted line of righting rotation vs initial pitch  |
+| Righting gain             |      | Absolute value of the slope of best fitted line of righting rotation vs initial pitch     |
 | Set piont                 | deg  | x intersect of best fitted line of righting rotation vs initial pitch                     |
 
 ## License

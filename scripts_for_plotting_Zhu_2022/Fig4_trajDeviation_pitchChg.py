@@ -9,6 +9,7 @@ trajectory deviation (trajecgtory residual) is defined as (bout_traj_peakecgtory
 #%%
 # import sys
 import os,glob
+from plot_functions.plt_tools import round_half_up
 import pandas as pd # pandas library
 import numpy as np # numpy
 import seaborn as sns
@@ -27,7 +28,7 @@ set_font_type()
 pick_data = 'all_7dd'
 root, FRAME_RATE= get_data_dir(pick_data)
 
-folder_name = f'{pick_data} corr plot_newTrajDeviation'
+folder_name = f'{pick_data} pitch chg vs traj deviation'
 folder_dir6 = get_figure_dir('Fig_6')
 folder_dir4 = get_figure_dir('Fig_4')
 
@@ -43,7 +44,7 @@ try:
 except:
     pass   
 peak_idx , total_aligned = get_index(FRAME_RATE)
-idxRANGE = [peak_idx-int(0.27*FRAME_RATE),peak_idx+int(0.22*FRAME_RATE)]
+idxRANGE = [peak_idx-round_half_up(0.27*FRAME_RATE),peak_idx+round_half_up(0.22*FRAME_RATE)]
 spd_bins = np.arange(5,25,4)
 
 # %% features for plotting
@@ -86,18 +87,16 @@ T_POST_BOUT = 0.1 #s
 T_END = 0.2
 T_MID_ACCEL = -0.05
 T_MID_DECEL = 0.05
-time_of_max_angSpd = -9.058456046407839/1000
 separation_posture = 10
-idx_initial = int(peak_idx + T_INITIAL * FRAME_RATE)
-idx_pre_bout = int(peak_idx + T_PRE_BOUT * FRAME_RATE)
-idx_post_bout = int(peak_idx + T_POST_BOUT * FRAME_RATE)
-# idx_mid_accel = int(peak_idx + T_MID_ACCEL * FRAME_RATE)
-# idx_mid_decel = int(peak_idx + T_MID_DECEL * FRAME_RATE)
-idx_end = int(peak_idx + T_END * FRAME_RATE)
-# idx_pre_150 = int(peak_idx + T_PREP_150 * FRAME_RATE)
-idx_dur300ms = int(0.3*FRAME_RATE)
-idx_dur250ms = int(0.25*FRAME_RATE)
-idx_angSpd_max = int(peak_idx + (time_of_max_angSpd) * FRAME_RATE)
+idx_initial = round_half_up(peak_idx + T_INITIAL * FRAME_RATE)
+idx_pre_bout = round_half_up(peak_idx + T_PRE_BOUT * FRAME_RATE)
+idx_post_bout = round_half_up(peak_idx + T_POST_BOUT * FRAME_RATE)
+# idx_mid_accel = round_half_up(peak_idx + T_MID_ACCEL * FRAME_RATE)
+# idx_mid_decel = round_half_up(peak_idx + T_MID_DECEL * FRAME_RATE)
+idx_end = round_half_up(peak_idx + T_END * FRAME_RATE)
+# idx_pre_150 = round_half_up(peak_idx + T_PREP_150 * FRAME_RATE)
+idx_dur300ms = round_half_up(0.3*FRAME_RATE)
+idx_dur250ms = round_half_up(0.25*FRAME_RATE)
 
 # %%
 all_conditions = []
@@ -135,7 +134,7 @@ for condition_idx, folder in enumerate(folder_paths):
                                             ang_accel_of_SMangVel = exp_data['propBoutAligned_angVel'].diff(),
                                            )
                 # assign frame number, total_aligned frames per bout
-                exp_data = exp_data.assign(idx=int(len(exp_data)/total_aligned)*list(range(0,total_aligned)))
+                exp_data = exp_data.assign(idx=round_half_up(len(exp_data)/total_aligned)*list(range(0,total_aligned)))
                 
                 # - get the index of the rows in exp_data to keep (for each bout, there are range(0:51) frames. keep range(20:41) frames)
                 bout_time = pd.read_hdf(f"{exp_path}/bout_data.h5", key='prop_bout2').loc[:,['aligned_time']]
@@ -187,13 +186,13 @@ for excluded_exp, idx_group in enumerate(idx_list):
     epochBouts_trajectory = np.degrees(np.arctan(yy/absxx)) # direction of the bout, -90:90
     pitch_pre_bout = group.loc[group.idx==idx_pre_bout,'propBoutAligned_pitch'].values
     pitch_initial = group.loc[group.idx==idx_initial,'propBoutAligned_pitch'].values
-    pitch_peak = group.loc[group.idx==int(peak_idx),'propBoutAligned_pitch'].values
-    # pitch_mid_accel = group.loc[group.idx==int(idx_mid_accel),'propBoutAligned_pitch'].values
+    pitch_peak = group.loc[group.idx==round_half_up(peak_idx),'propBoutAligned_pitch'].values
+    # pitch_mid_accel = group.loc[group.idx==round_half_up(idx_mid_accel),'propBoutAligned_pitch'].values
     traj_peak = group.loc[group['idx']==peak_idx,'propBoutAligned_instHeading'].values
 
     rot_all_l_accel = pitch_peak - pitch_initial
 
-    bout_traj_peak = group.loc[group.idx==idx_angSpd_max,'propBoutAligned_instHeading'].values
+    bout_traj_peak = group.loc[group.idx==peak_idx,'propBoutAligned_instHeading'].values
     traj_deviation = bout_traj_peak-pitch_initial
     # rot_early_accel = pitch_mid_accel - pitch_pre_bout
     bout_features = pd.DataFrame(data={'pitch_pre_bout':pitch_pre_bout,
@@ -203,7 +202,7 @@ for excluded_exp, idx_group in enumerate(idx_list):
                                        'traj_peak':traj_peak, 
                                        'traj_deviation':traj_deviation,
                                        'atk_ang':traj_peak-pitch_peak,
-                                       'spd_peak': group.loc[group.idx==int(peak_idx),'propBoutAligned_speed'].values,
+                                       'spd_peak': group.loc[group.idx==round_half_up(peak_idx),'propBoutAligned_speed'].values,
                                        })
     features_all = pd.concat([features_all,bout_features],ignore_index=True)
     
@@ -221,7 +220,7 @@ for excluded_exp, idx_group in enumerate(idx_list):
                                 traj_peak = np.repeat(traj_peak,(idxRANGE[1]-idxRANGE[0])),
                                 pitch_peak = np.repeat(pitch_peak,(idxRANGE[1]-idxRANGE[0])),
                                 traj_deviation =  np.repeat(traj_deviation,(idxRANGE[1]-idxRANGE[0])),
-                                absolute_pitch_change = group['propBoutAligned_pitch'] - np.repeat(null_initial_pitch,(idxRANGE[1]-idxRANGE[0])).values
+                                relative_pitch_chg = group['propBoutAligned_pitch'] - np.repeat(null_initial_pitch,(idxRANGE[1]-idxRANGE[0])).values
                                 )
     this_res = this_res.assign(
                                 atk_ang = this_res['traj_peak']-this_res['pitch_peak'],
@@ -273,7 +272,7 @@ for feature in feature_to_plt:
 # regression: attack angle vs accel rotation
 to_plt = features_all.loc[features_all['spd_peak']>5]
 BIN_WIDTH = 0.5
-AVERAGE_BIN = np.arange(int(lower),int(upper),BIN_WIDTH)
+AVERAGE_BIN = np.arange(round_half_up(lower),round_half_up(upper),BIN_WIDTH)
 # binned_df_dir = to_plt.groupby('direction').apply(
 #     lambda g: distribution_binned_average_nostd(g,by_col=which_rotation,bin_col='traj_deviation',bin=AVERAGE_BIN)
 # )
@@ -331,7 +330,7 @@ g = sns.relplot(
     data = to_plt.sample(frac=0.2),
     x = which_rotation,
     y = 'traj_deviation',
-    # x_bins=np.arange(int(lower),int(upper),3),
+    # x_bins=np.arange(round_half_up(lower),round_half_up(upper),3),
     # x_ci=95,
     alpha=0.1,
     # hue='direction',
@@ -356,7 +355,7 @@ print(f"pearson's r = {r_val}")
 # %%
 # %%
 # plot absolute pitch change
-plt_features = 'absolute_pitch_change'
+plt_features = 'relative_pitch_chg'
 # sample bout groups
 sample_bouts = np.random.choice(all_around_peak_res["bout_number"].unique(), 500)
 df_sampled = all_around_peak_res.query('bout_number in @sample_bouts')
@@ -365,7 +364,7 @@ p = sns.relplot(
         data = df_sampled, x = 'time_ms', y = plt_features,
         kind = 'line',
         aspect=2, height=2, 
-        # ci='sd',
+        # errorbar='sd',
         estimator=None,
         units = 'bout_number',
         alpha = 0.05

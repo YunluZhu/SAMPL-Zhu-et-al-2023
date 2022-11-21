@@ -1,12 +1,26 @@
 '''
-Read one .dlm file and return a dataframe
+Read one .dlm file and return a dataframe containing extracted features
+Modified from:
+analyzeFreeVerticalGrouped2.m by DEE 1.30.2015
+    "the LabView code returns a value to mark an "epoch," which is a continuous series of frames that had at least one identified particle 
++ lines to output head location in addition to body, for detection direction of movement." 
 '''
 
 import pandas as pd
 import numpy as np
+from scipy.signal import savgol_filter
 
 
 def read_dlm(i, filename):
+    """Read .dlm files into a DataFrame
+
+    Args:
+        i (int): index of the file in the folder
+        filename (string): directory of the .dlm file
+
+    Returns:
+        DataFrame: 
+    """
     # read_dlm takes file index: i, and the file name end with .dlm
     col_names = ['time','fishNum','ang','absx','absy','absHeadx','absHeady','col7','epochNum','fishLen']
     try:

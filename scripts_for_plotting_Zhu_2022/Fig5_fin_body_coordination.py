@@ -1,9 +1,14 @@
 '''
+distribution of attack angle
+distribution of steering-related rotation
+attack angle vs steering related rotation
+attack angle vs rotation residual
 
 '''
 
 #%%
 import os
+from plot_functions.plt_tools import round_half_up
 import pandas as pd # pandas library
 import numpy as np
 import seaborn as sns
@@ -12,7 +17,7 @@ from astropy.stats import jackknife_resampling
 from scipy.optimize import curve_fit
 from plot_functions.get_index import (get_index)
 from plot_functions.get_data_dir import (get_data_dir, get_figure_dir)
-from plot_functions.get_bout_features import get_bout_features
+from plot_functions.get_bout_features import get_bout_features,get_max_angvel_rot
 from plot_functions.plt_tools import (set_font_type, defaultPlotting,distribution_binned_average,distribution_binned_average_nostd)
 import scipy.stats as st
 from scipy import stats
@@ -22,28 +27,9 @@ set_font_type()
 def sigmoid_fit(df, x_range_to_fit,func,**kwargs):
     lower_bounds = [0.1,0,-100,1]
     upper_bounds = [10,20,2,100]
-    x0=[5, 1, 0, 5]
-    
-    # for key, value in kwargs.items():
-    #     if key == 'a':
-    #         x0[0] = value
-    #         lower_bounds[0] = value-0.01
-    #         upper_bounds[0] = value+0.01
-    #     elif key == 'b':
-    #         x0[1] = value
-    #         lower_bounds[1] = value-0.01
-    #         upper_bounds[1] = value+0.01
-    #     elif key == 'c':
-    #         x0[2] = value
-    #         lower_bounds[2] = value-0.01
-    #         upper_bounds[2] = value+0.01
-    #     elif key =='d':
-    #         x0[3] = value
-    #         lower_bounds[3] = value-0.01
-    #         upper_bounds[3] = value+0.01
-            
+    x0=[5, 1, 0, 5]     
     p0 = tuple(x0)
-    popt, pcov = curve_fit(func, df['rot_early'], df['atk_ang'], 
+    popt, pcov = curve_fit(func, df['rot_to_max_angvel'], df['atk_ang'], 
                         #    maxfev=2000, 
                            p0 = p0,
                            bounds=(lower_bounds,upper_bounds))
@@ -62,9 +48,7 @@ def sigfunc_4free(x, a, b, c, d):
 pick_data = 'all_7dd'
 which_ztime = 'day'
 root, FRAME_RATE = get_data_dir(pick_data)
-if_sample = True
-SAMPLE_N = 1000
-DAY_RESAMPLE = 1000
+DAY_RESAMPLE = 0
 folder_name = f'{pick_data} atk_ang fin_body_ratio'
 folder_dir5 = get_figure_dir('Fig_5')
 fig_dir = os.path.join(folder_dir5, folder_name)
@@ -87,11 +71,12 @@ except:
 X_RANGE = np.arange(-2,8.01,0.01)
 BIN_WIDTH = 0.4
 AVERAGE_BIN = np.arange(min(X_RANGE),max(X_RANGE),BIN_WIDTH)
-all_feature_cond, all_cond1, all_cond2 = get_bout_features(root, FRAME_RATE)
+max_angvel_time, _, _ = get_max_angvel_rot(root, FRAME_RATE)
+all_feature_cond, all_cond1, all_cond2 = get_bout_features(root, FRAME_RATE, max_angvel_time=max_angvel_time)
 all_feature_cond = all_feature_cond.reset_index(drop=True)
 # %%
 print("- Figure 5: Distribution of early body rotation and attack angle")
-feature_to_plt = ['rot_early','atk_ang']
+feature_to_plt = ['rot_to_max_angvel','atk_ang']
 toplt = all_feature_cond
 
 for feature in feature_to_plt:
@@ -118,26 +103,22 @@ for feature in feature_to_plt:
     # plt.close()
 # %% tidy data
 all_feature_cond = all_feature_cond.sort_values(by=['condition','expNum']).reset_index(drop=True)
-if FRAME_RATE > 100:
-    all_feature_cond.drop(all_feature_cond[all_feature_cond['spd_peak']<7].index, inplace=True)
-elif FRAME_RATE == 40:
-    all_feature_cond.drop(all_feature_cond[all_feature_cond['spd_peak']<4].index, inplace=True)
-
+all_feature_cond.drop(all_feature_cond[all_feature_cond['spd_peak']<7].index, inplace=True)
 # %% 5D
 print("- Figure 5: correlation of attack angle with rotation and rotation residual")
 toplt = all_feature_cond
 plt_dict = {
-    'early_rotation vs atk_ang':['rot_early','atk_ang'],
+    'early_rotation vs atk_ang':['rot_to_max_angvel','atk_ang'],
     'late_rotation vs atk_ang':['rot_residual','atk_ang'],
 }
 
+# %%
 for which_to_plot in plt_dict:
     [x,y] = plt_dict[which_to_plot]
-
     upper = np.percentile(toplt[x], 99)
-    lower = np.percentile(toplt[x], 1)
+    lower = np.percentile(toplt[x], 2)
     BIN_WIDTH = 0.5
-    AVERAGE_BIN = np.arange(int(lower),int(upper),BIN_WIDTH)
+    AVERAGE_BIN = np.arange(round_half_up(lower),round_half_up(upper),BIN_WIDTH)
     binned_df = toplt.groupby(['condition','dpf']).apply(
         lambda group: distribution_binned_average_nostd(group,by_col=x,bin_col=y,bin=AVERAGE_BIN)
     )
@@ -173,7 +154,7 @@ for which_to_plot in plt_dict:
                         legend=False,
                         ax=ax)
     
-    g.set(ylim=(-15,20))
+    g.set(ylim=(-12,16))
     g.set(xlim=(lower,upper))
     g.set(xlabel=x+" (deg)")
     g.set(ylabel=y+" (deg)")
@@ -186,14 +167,12 @@ for which_to_plot in plt_dict:
     
     
 # %% fit sigmoid 
-df_toplt = all_feature_cond
-
 angles_day_resampled = pd.DataFrame()
 angles_night_resampled = pd.DataFrame()
 
 if which_ztime != 'night':
-    angles_day_resampled = df_toplt.loc[
-        df_toplt['ztime']=='day',:
+    angles_day_resampled = all_feature_cond.loc[
+        all_feature_cond['ztime']=='day',:
             ]
     if DAY_RESAMPLE != 0:  # if resampled
         angles_day_resampled = angles_day_resampled.groupby(
@@ -208,14 +187,13 @@ all_coef = pd.DataFrame()
 all_y = pd.DataFrame()
 all_binned_average = pd.DataFrame()
 
-upper = np.percentile(df_toplt['rot_early'], 99)
-lower = np.percentile(df_toplt['rot_early'], 1)
-BIN_WIDTH = 0.8
-AVERAGE_BIN = np.arange(int(lower),int(upper),BIN_WIDTH)
+upper = np.percentile(df_toplt['rot_to_max_angvel'], 99)
+lower = np.percentile(df_toplt['rot_to_max_angvel'], 1)
+BIN_WIDTH = 0.6
+AVERAGE_BIN = np.arange(round_half_up(lower),round_half_up(upper),BIN_WIDTH)
 
 for (cond_abla,cond_dpf,cond_ztime), for_fit in df_toplt.groupby(['condition','dpf','ztime']):
 
-    
     expNum = for_fit['expNum'].max()
     jackknife_idx = jackknife_resampling(np.array(list(range(expNum+1))))
     for excluded_exp, idx_group in enumerate(jackknife_idx):
@@ -237,7 +215,7 @@ for (cond_abla,cond_dpf,cond_ztime), for_fit in df_toplt.groupby(['condition','d
             excluded_exp = excluded_exp,
             ztime=cond_ztime,
             )])
-    binned_df = distribution_binned_average_nostd(for_fit,by_col='rot_early',bin_col='atk_ang',bin=AVERAGE_BIN)
+    binned_df = distribution_binned_average_nostd(for_fit,by_col='rot_to_max_angvel',bin_col='atk_ang',bin=AVERAGE_BIN)
     binned_df.columns=['rotation (deg)','atk_ang']
     all_binned_average = pd.concat([all_binned_average,binned_df.assign(
         dpf=cond_dpf,
@@ -251,8 +229,7 @@ all_coef.columns=['k','xval','min','height',
                   'slope','dpf','condition','excluded_exp','ztime']
 all_ztime = list(set(all_coef['ztime']))
 all_ztime.sort()
-# %%
-# plot bout frequency vs IBI pitch and fit with parabola
+
 defaultPlotting(size=12)
 
 plt.figure()
@@ -261,7 +238,7 @@ g = sns.relplot(x='rotation (deg)',y='Attack angle (deg)', data=all_y,
                 kind='line',
                 col='dpf', 
                 row = 'ztime', row_order=all_ztime,
-                ci='sd',
+                errorbar='sd',
                 )
 for i , g_row in enumerate(g.axes):
     for j, ax in enumerate(g_row):
@@ -272,13 +249,11 @@ for i , g_row in enumerate(g.axes):
                     ax=ax)
 upper = np.percentile(df_toplt['atk_ang'], 80)
 lower = np.percentile(df_toplt['atk_ang'], 20)
-g.set(ylim=(-2, 6))
-g.set(xlim=(-2, 8))
+g.set(ylim=(-1, 4.5))
+g.set(xlim=(-2, 7))
 
 filename = os.path.join(fig_dir,"fin-body coordination.pdf")
 plt.savefig(filename,format='PDF')
-
-# plt.show()
 
 # %%
 # plot 
@@ -287,7 +262,7 @@ defaultPlotting(size=12)
 plt.figure()
 p = sns.catplot(
     data = all_coef, y='slope',x='dpf',kind='point',join=False,
-    col_order=all_cond1,ci='sd',
+    col_order=all_cond1,errorbar='sd',
     row = 'ztime', row_order=all_ztime,
     # units=excluded_exp,
     hue='condition', dodge=True,
@@ -301,79 +276,16 @@ p.map(sns.lineplot,'dpf','slope',estimator=None,
 filename = os.path.join(fig_dir,"slope_together.pdf")
 plt.savefig(filename,format='PDF')
 
-
 # %%
-# if to plot other coefs
 
-# defaultPlotting(size=12)
-# for coef_name in ['k','xval','min','height','slope']:
-#     plt.figure()
-#     p = sns.catplot(
-#         data = all_coef, y=coef_name,x='condition',kind='point',join=False,
-#         col='dpf',col_order=all_cond1,
-#         ci='sd',
-#         row = 'ztime', row_order=all_ztime,
-#         # units=excluded_exp,
-#         hue='condition', dodge=True,
-#         hue_order = all_cond2,
-#         sharey=False,
-#         aspect=.6,
-#     )
-#     p.map(sns.lineplot,'condition',coef_name,estimator=None,
-#         units='excluded_exp',
-#         hue='condition',
-#         alpha=0.2,
-#         data=all_coef)
-#     sns.despine(offset=10)
-#     filename = os.path.join(fig_dir,f"{coef_name} by cond1.pdf")
-    
-#     plt.savefig(filename,format='PDF')
-# %%
-# plot CI of slope
-print("- Figure supp - CI width vs sample size - max slope of fin-body ratio")
-list_of_sample_N = np.arange(1000,len(all_feature_cond),1000)
-repeated_res = pd.DataFrame()
-num_of_repeats = 20
-rep = 0
+mean_val = all_coef['slope'].mean()
+std_val = all_coef['slope'].std()
+print(f"maximal slope: {mean_val:.3f}±{std_val:.3f}")
 
-while rep < num_of_repeats:
-    list_of_ci_width = []
-    for sample_N in list_of_sample_N:
-        sample_for_fit = all_feature_cond.sample(n=sample_N)
-        coef, fitted_y, sigma = sigmoid_fit(
-            sample_for_fit, X_RANGE, func=sigfunc_4free
-        )
-        E_height = coef.iloc[0,3]
-        E_k = coef.iloc[0,0]
-        V_height = sigma[3]**2
-        V_k = sigma[0]**2
-        
-        mean_formSample = E_k * E_height / 4
-        
-        slope_var = (V_height*V_k + V_height*(E_k**2) +  V_k*(E_height**2)) * (1/4)**2
-        sigma_formSample = np.sqrt(slope_var)
-        
-        (ci_low, ci_high) = st.norm.interval(0.95, loc=mean_formSample, scale=sigma_formSample)
-        ci_width = ci_high - ci_low
-        list_of_ci_width.append(ci_width)
-    res = pd.DataFrame(
-        data = {
-            'sample':list_of_sample_N,
-            'CI width': list_of_ci_width,
-        }
-    )
-    repeated_res = pd.concat([repeated_res,res],ignore_index=True)
-    rep+=1
+mean_val = (all_coef['height']+all_coef['min']).mean()
+std_val = (all_coef['height']+all_coef['min']).std()
+print(f"upper asymptote: {mean_val:.3f}±{std_val:.3f}")
 
-plt.figure(figsize=(5,4))
-g = sns.lineplot(
-    data = repeated_res,
-    x = 'sample',
-    y = 'CI width',
-    ci='sd',
-)
-filename = os.path.join(ci_fig,"fin-body ratio slope CI width.pdf")
-plt.savefig(filename,format='PDF')
 # %%
 # plot finless fish data
 pick_data = 'finless'
@@ -383,7 +295,7 @@ root, FRAME_RATE = get_data_dir(pick_data)
 X_RANGE = np.arange(-2,8.01,0.01)
 BIN_WIDTH = 0.4
 AVERAGE_BIN = np.arange(min(X_RANGE),max(X_RANGE),BIN_WIDTH)
-all_feature_finless, all_cond1, all_cond2 = get_bout_features(root, FRAME_RATE)
+all_feature_finless, fin_cond1, fin_cond2 = get_bout_features(root, FRAME_RATE)
 all_feature_finless = all_feature_finless.reset_index(drop=True)
 
 feature = 'atk_ang'
@@ -410,3 +322,4 @@ g = sns.histplot(data=all_feature_finless,
 g.set_xlabel(xlabel)
 sns.despine()
 plt.savefig(os.path.join(fig_dir,f"{feature} distribution finless fish.pdf"),format='PDF')
+# %%

@@ -6,6 +6,7 @@ Plot parameter correlations for calculating kinetics in Figure 3.
 #%%
 # import sys
 import os
+from plot_functions.plt_tools import round_half_up
 import pandas as pd # pandas library
 import numpy as np # numpy
 import seaborn as sns
@@ -67,9 +68,13 @@ all_metadata = all_metadata.assign(
 ) 
 
 bout_number24h = all_metadata.groupby(['date','expNum','box_number']).sum()
+
+bout_by_size = bout_number24h.assign(
+    cuvette = pd.cut(bout_number24h['num_fish'],bins=[0,3.1,10],labels=['narrow','standard'])
+)
+
 toplt = bout_number24h
 feature = 'aligned_bout'
-
 upper = np.percentile(toplt[feature], 99.5)
 lower = np.percentile(toplt[feature], 0.5)
 
@@ -88,4 +93,18 @@ sns.despine()
 plt.savefig(fig_dir2+f"/{feature} distribution.pdf",format='PDF')
 print(f"bouts per box per 24hrs = {toplt[feature].mean():.2f} ± {toplt[feature].std():.2f} (mean ± STD)")
 # plt.close()
+# %%
+bout_by_size = bout_by_size.reset_index(drop=True)
+
+plt.figure(figsize=(3,2))
+g = sns.pointplot(data=bout_by_size, y=feature, x='cuvette')
+g.set_xlabel('bout number by cuvette/box/24hrs')
+sns.despine()
+plt.savefig(fig_dir2+f"/{feature} distribution.pdf",format='PDF')
+
+n_mean, s_mean = bout_by_size.groupby('cuvette').mean()['aligned_bout'].values
+n_std, s_std = bout_by_size.groupby('cuvette').std()['aligned_bout'].values
+print(f"bouts per box per 24hrs (narrow cuvettes) = {n_mean:.2f} ± {n_std:.2f} (mean ± STD)")
+print(f"bouts per box per 24hrs (std cuvettes) = {s_mean:.2f} ± {s_std:.2f} (mean ± STD)")
+
 # %%

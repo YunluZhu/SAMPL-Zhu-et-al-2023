@@ -32,12 +32,20 @@ import pandas as pd # pandas library
 import numpy as np # numpy
 import seaborn as sns
 import matplotlib.pyplot as plt
+from plot_functions.plt_tools import round_half_up
 from plot_functions.plt_tools import (set_font_type, defaultPlotting, day_night_split)
 from plot_functions.plt_v4 import (jackknife_kinetics, extract_bout_features_v4, get_kinetics)
 from plot_functions.get_index import (get_index, get_frame_rate)
 
 # %%
 def plot_kinetics(root, **kwargs):
+    """plot kinetics
+
+    Args:
+        root (string): directory
+        sample_bout (int): number of bouts to sample from each experimental repeat. default is off (sample_bout = -1)
+
+    """
     print('\n- Plotting bout kinetics')
     # generate figure folder
     folder_name = 'kinetics'
@@ -49,9 +57,9 @@ def plot_kinetics(root, **kwargs):
     
     for key, value in kwargs.items():
         if key == 'sample_bout':
-            SAMPLE_N = value
+            SAMPLE_N = int(value)
     if SAMPLE_N == -1:
-        SAMPLE_N = int(input("How many bouts to sample from each dataset? ('0' for no sampling): "))
+        SAMPLE_N = round_half_up(input("How many bouts to sample from each dataset? ('0' for no sampling): "))
     if SAMPLE_N > 0:
         if_sample = True
 
@@ -77,7 +85,7 @@ def plot_kinetics(root, **kwargs):
         FRAME_RATE = get_frame_rate(all_dir[0])
     except:
         print("No info file found!\n")
-        FRAME_RATE = int(input("Frame rate? "))
+        FRAME_RATE = round_half_up(input("Frame rate? "))
 
     # get the index for the time of peak speed, and total time points for each aligned bout
     peak_idx, total_aligned = get_index(FRAME_RATE)
@@ -86,15 +94,8 @@ def plot_kinetics(root, **kwargs):
     # defaultPlotting()
     T_start = -0.3
     T_end = 0.3
-    T_INITIAL = -0.25 #s
-    T_PRE_BOUT = -0.10 #s
-    T_POST_BOUT = 0.15 #s
-    idx_start = int(peak_idx + T_start * FRAME_RATE)
-    idx_end = int(peak_idx + T_end * FRAME_RATE)
-
-    # idx_initial = int(peak_idx + T_INITIAL * FRAME_RATE)
-    # idx_pre_bout = int(peak_idx + T_PRE_BOUT * FRAME_RATE)
-    # idx_end_bout = int(peak_idx + T_POST_BOUT * FRAME_RATE)
+    idx_start = round_half_up(peak_idx + T_start * FRAME_RATE)
+    idx_end = round_half_up(peak_idx + T_end * FRAME_RATE)
     idxRANGE = [idx_start,idx_end]
 
     # %%
@@ -113,13 +114,13 @@ def plot_kinetics(root, **kwargs):
         # get pitch                
         exp_data = pd.read_hdf(f"{exp_path}/bout_data.h5", key='prop_bout_aligned')
         # assign frame number, total_aligned frames per bout
-        exp_data = exp_data.assign(idx=int(len(exp_data)/total_aligned)*list(range(0,total_aligned)))
+        exp_data = exp_data.assign(idx=round_half_up(len(exp_data)/total_aligned)*list(range(0,total_aligned)))
         
         # - get the index of the rows in exp_data to keep (for each bout, there are range(0:51) frames. keep range(20:41) frames)
         bout_time = pd.read_hdf(f"{exp_path}/bout_data.h5", key='prop_bout2').loc[:,['aligned_time']]
         # # if only need day or night bouts:
         for i in day_night_split(bout_time,'aligned_time').index:
-            rows.extend(list(range(i*total_aligned+int(idxRANGE[0]),i*total_aligned+int(idxRANGE[1]))))
+            rows.extend(list(range(i*total_aligned+round_half_up(idxRANGE[0]),i*total_aligned+round_half_up(idxRANGE[1]))))
         exp_data = exp_data.assign(expNum = exp)
         trunc_day_exp_data = exp_data.loc[rows,:]
         trunc_day_exp_data = trunc_day_exp_data.assign(
@@ -141,11 +142,14 @@ def plot_kinetics(root, **kwargs):
                     this_exp_features = this_exp_features.sample(n=SAMPLE_N,replace=True)
         
         this_exp_kinetics = get_kinetics(this_exp_features)
-        this_exp_kinetics = this_exp_kinetics.append(pd.Series(data={'exp_num': expNum}))
+        this_exp_kinetics = pd.concat([this_exp_kinetics, pd.Series(data={'exp_num': expNum})])
         
         bout_features = pd.concat([bout_features,this_exp_features])
         bout_kinetics = pd.concat([bout_kinetics,this_exp_kinetics.to_frame().T], ignore_index=True)
 
+    mean_val = bout_kinetics.mean()
+    filename = os.path.join(fig_dir,f"kinetics mean values.csv")
+    mean_val.to_csv(filename)
     # %% Jackknife resampling
     if if_jackknife:
     # calculate kinetics
@@ -153,6 +157,9 @@ def plot_kinetics(root, **kwargs):
         cat_cols = ['jackknife_group']
         kinetics_jackknife.rename(columns={c:c+'_jack' for c in kinetics_jackknife.columns if c not in cat_cols},inplace=True)
         kinetics_jackknife = kinetics_jackknife.sort_values(by=['jackknife_group']).reset_index(drop=True)
+        mean_val = kinetics_jackknife.mean()
+        filename = os.path.join(fig_dir,f"jackknifed kinetics mean values.csv")
+        mean_val.to_csv(filename)
 
     defaultPlotting()
 
@@ -169,7 +176,7 @@ def plot_kinetics(root, **kwargs):
         g = sns.catplot(data = toplt,y = feature_toplt,
                         height=4, aspect=0.8, kind='point',
                         markers='d',sharey=False,
-                        zorder=10
+                        # zorder=10
                         )
         filename = os.path.join(fig_dir,f"{feature_toplt}.pdf")
         plt.savefig(filename,format='PDF')

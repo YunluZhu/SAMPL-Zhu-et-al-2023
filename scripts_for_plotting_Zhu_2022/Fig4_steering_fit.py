@@ -6,6 +6,7 @@ Plot parameter correlations for calculating kinetics in Figure 3.
 #%%
 # import sys
 import os
+from plot_functions.plt_tools import round_half_up
 import pandas as pd # pandas library
 import numpy as np # numpy
 import seaborn as sns
@@ -50,7 +51,7 @@ pick_data = 'all_7dd'
 which_ztime = 'day'
 root, FRAME_RATE = get_data_dir(pick_data)
 
-folder_name = f'{pick_data} steering gain'
+folder_name = f'{pick_data} steering fit'
 
 fig_dir4 = os.path.join(get_figure_dir('Fig_4'), folder_name)
 # fig_dir6 = os.path.join(get_figure_dir('Fig_6'), folder_name)
@@ -208,91 +209,3 @@ plt.show()
 # sns.despine()
 # plt.savefig(fig_dir6+f"/{feature} distribution.pdf",format='PDF')
 # plt.close()
-# %%
-print("- Figure supp - CI width vs sample size - Steering gain")
-
-# for steering gain
-
-list_of_sample_N = np.arange(1000,len(all_feature_UD),500)
-repeated_res = pd.DataFrame()
-num_of_repeats = 20
-rep = 0
-
-xcol = 'traj_peak'
-ycol = 'pitch_peak'
-
-while rep < num_of_repeats:
-    list_of_ci_width = []
-    for sample_N in list_of_sample_N:
-        sample_for_fit = all_feature_UD.sample(n=sample_N)
-        sample_for_fit.dropna(inplace=True)
-        xdata = sample_for_fit[xcol] 
-        ydata = sample_for_fit[ycol]
-        model_par = linregress(xdata, ydata)
-        slope, intercept, r_value, p_value, std_err = model_par
-        (ci_low, ci_high) = st.norm.interval(0.95, loc=slope, scale=std_err)
-        ci_width = ci_high - ci_low
-        list_of_ci_width.append(ci_width)
-    res = pd.DataFrame(
-        data = {
-            'sample':list_of_sample_N,
-            'CI width': list_of_ci_width,
-        }
-    )
-    repeated_res = pd.concat([repeated_res,res],ignore_index=True)
-    rep+=1
-
-plt.figure(figsize=(5,4))
-g = sns.lineplot(
-    data = repeated_res,
-    x = 'sample',
-    y = 'CI width',
-    ci = 'sd'
-)
-filename = os.path.join(ci_fig,"Steering gain CI width.pdf")
-plt.savefig(filename,format='PDF')
-# %%
-# # %%
-# print("Figure supp - CI width vs sample size - Righting gain")
-
-# # for righting gain
-
-# list_of_sample_N = np.arange(1000,len(all_feature_UD),500)
-# repeated_res = pd.DataFrame()
-# num_of_repeats = 20
-# rep = 0
-
-# xcol = 'pitch_initial'
-# ycol = 'rot_l_decel'
-
-# while rep < num_of_repeats:
-#     list_of_ci_width = []
-#     for sample_N in list_of_sample_N:
-#         sample_for_fit = all_feature_UD.sample(n=sample_N)
-#         sample_for_fit.dropna(inplace=True)
-#         xdata = sample_for_fit[xcol] 
-#         ydata = sample_for_fit[ycol]
-#         model_par = linregress(xdata, ydata)
-#         slope, intercept, r_value, p_value, std_err = model_par
-#         (ci_low, ci_high) = st.norm.interval(0.95, loc=slope, scale=std_err)
-#         ci_width = ci_high - ci_low
-#         list_of_ci_width.append(ci_width)
-#     res = pd.DataFrame(
-#         data = {
-#             'sample':list_of_sample_N,
-#             'CI width': list_of_ci_width,
-#         }
-#     )
-#     repeated_res = pd.concat([repeated_res,res],ignore_index=True)
-#     rep+=1
-
-# plt.figure(figsize=(5,4))
-# g = sns.lineplot(
-#     data = repeated_res,
-#     x = 'sample',
-#     y = 'CI width'
-# )
-# filename = os.path.join(ci_fig,"Righting gain CI width.pdf")
-# plt.savefig(filename,format='PDF')
-
-# %%

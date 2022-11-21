@@ -22,6 +22,12 @@ from bout_analysis.logger import log_vf_ana
 from tqdm import tqdm
 
 def vf_analysis(root,frame_rate):
+    """Analyze behavior data. Extract bouts. Align bouts.
+
+    Args:
+        root (string): directory of behavior data to be analyzed. Data in all subfolders of the root directory will be analyzed. .dlm files in the same folder will be combined for bout extraction.
+        frame_rate (int): Frame rate 
+    """
     logger = log_vf_ana('vf_ana_log')
     logger.info(f"Analysis Started!")
     logger.info(f"Root dir: {root}")

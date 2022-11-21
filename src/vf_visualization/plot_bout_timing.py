@@ -67,6 +67,12 @@ def parabola_fit1(df, X_RANGE_to_fit):
 
 # %%
 def plot_bout_timing(root, **kwargs):
+    """plots bout frequency as a function of IBI pitch angle
+
+    Args:
+        root (stirng): directory containing analyzed .dlm or folders containing analyzed .dlm representing experimental repeats
+        sample_bout (int): number of bouts to sample from each experimental repeat. default is off (sample_bout = -1)
+    """
     print('\n- Plotting bout frequency as a function of pitch')
     # CONSTANTS
     BIN_WIDTH = 3  # this adjusts the density of raw data points on the fitted parabola
@@ -77,7 +83,7 @@ def plot_bout_timing(root, **kwargs):
     
     for key, value in kwargs.items():
         if key == 'sample_bout':
-            SAMPLE_N = value
+            SAMPLE_N = int(value)
     if SAMPLE_N == -1:
         SAMPLE_N = int(input("How many bouts to sample from each dataset? ('0' for no sampling): "))
     if SAMPLE_N > 0:
@@ -132,6 +138,9 @@ def plot_bout_timing(root, **kwargs):
 
     all_day_angles = all_day_angles.assign(y_boutFreq=1/all_day_angles['propBoutIEI'])
     binned_angles = distribution_binned_average(all_day_angles, BIN_WIDTH)
+    print(f"Mean bout frequency: {all_day_angles.mean().loc['y_boutFreq']}")
+    print(f"Mean bout interval: {all_day_angles.mean().loc['propBoutIEI']}")
+    print(f"Mean bout pitch: {all_day_angles.mean().loc['propBoutIEI_pitch']}")
 
     # %%
     if if_jackknife:
@@ -153,15 +162,25 @@ def plot_bout_timing(root, **kwargs):
     all_coef, all_fitted_y = parabola_fit1(all_day_angles, X_RANGE_FULL)
     all_coef.columns = ['sensitivity','x_inter','y_inter']
     all_fitted_y.columns = ['y','x']
-        
-    # %%
-    print("Fitted coefs using ALL data (for reference):")
-    print(all_coef)
+    all_coef['sensitivity'] = all_coef['sensitivity']*1000
+    
 
     # %%
     # plot fitted parabola and sensitivity
     defaultPlotting()
     set_font_type()
+
+    if if_jackknife:
+        mean_val = jackknifed_coef.mean()
+        filename = os.path.join(fig_dir,f"jackknifed bout timing coef mean values.csv")
+        output_coef = mean_val[['sensitivity','x_inter','y_inter']]
+    else:
+        output_coef = all_coef
+        filename = os.path.join(fig_dir,f"fitted with all data - bout timing coef mean values.csv")
+        
+    print("Fitted coef:")
+    print(output_coef)
+    output_coef.to_csv(filename)
 
     # loop through differrent age (dpf), plot parabola in the first row and sensitivy in the second.
     if if_jackknife:
@@ -173,7 +192,7 @@ def plot_bout_timing(root, **kwargs):
 
     fitted.reset_index(drop=True,inplace=True)
     # dots are plotted with binned average pitches
-    g = sns.lineplot(x='x',y='y',data=fitted, ci="sd")
+    g = sns.lineplot(x='x',y='y',data=fitted, errorbar="sd")
     g = sns.scatterplot(x='propBoutIEI_pitch',y='y_boutFreq',s=20, data=binned_angles, alpha=0.3,linewidth=0)
     g.set_ylim(0, None,30)
     g.set_xlabel("Pitch angle")
@@ -186,8 +205,6 @@ def plot_bout_timing(root, **kwargs):
 
     # SENSITIVITY
     g = sns.pointplot(y='sensitivity',data=coef_plt, 
-                    linewidth=0,
-                    alpha=0.9,
                     markers='d',
                     ax=axes[0],
     )

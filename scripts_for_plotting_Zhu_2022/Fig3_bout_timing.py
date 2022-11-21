@@ -13,6 +13,7 @@ Sampled? Yes - ONE sample number for day and night
 
 #%%
 import os
+from plot_functions.plt_tools import round_half_up
 import pandas as pd # pandas library
 import numpy as np # numpy
 import seaborn as sns
@@ -197,7 +198,7 @@ print(jackknifed_coef[coef_columns].std())
 g = sns.relplot(x='IBI pitch',y='Bout frequency', data=jackknifed_y, 
                 kind='line',
                 col='dpf', col_order=cond1_all,
-                hue='condition', hue_order = cond2_all,ci='sd',
+                hue='condition', hue_order = cond2_all,errorbar='sd',
                 aspect=0.8
                 )
 for i , g_row in enumerate(g.axes):
@@ -224,7 +225,7 @@ plt.close()
 for i, coef_col_name in enumerate(coef_columns):
     p = sns.catplot(
         data = jackknifed_coef, y=coef_col_name,x='dpf',kind='point',join=False,
-        col_order=cond1_all,ci='sd',
+        col_order=cond1_all,errorbar='sd',
         hue='condition', dodge=True,
         hue_order = cond2_all,sharey=False
     
@@ -237,43 +238,3 @@ for i, coef_col_name in enumerate(coef_columns):
     filename = os.path.join(fig_dir,f"IBI {coef_names[i]} sample{SAMPLE_N} ± SD.pdf")
     plt.savefig(filename,format='PDF')
 
-# %%
-# plot CI of slope
-print("- Figure supp - CI width vs sample size - bout timing sensitivity")
-
-list_of_sample_N = np.arange(1000,len(IBI_angles),500)
-repeated_res = pd.DataFrame()
-num_of_repeats = 20
-rep = 0
-
-while rep < num_of_repeats:
-    list_of_ci_width = []
-    for sample_N in list_of_sample_N:
-        sample_for_fit = IBI_angles.sample(n=sample_N)[['propBoutIEI_pitch','bout_freq','propBoutIEI']]
-        sample_for_fit.dropna(inplace=True)
-        coef, fitted_y, sigma = parabola_fit1(sample_for_fit, X_RANGE_FULL)
-        E_sensitivity = coef.iloc[0,0] * 1000
-        sigma_sensitivity = sigma[0] * 1000
-                
-        (ci_low, ci_high) = st.norm.interval(0.95, loc=E_sensitivity, scale=sigma_sensitivity)
-        ci_width = ci_high - ci_low
-        list_of_ci_width.append(ci_width)
-    res = pd.DataFrame(
-        data = {
-            'sample':list_of_sample_N,
-            'CI width': list_of_ci_width,
-        }
-    )
-    repeated_res = pd.concat([repeated_res,res],ignore_index=True)
-    rep+=1
-
-plt.figure(figsize=(5,4))
-g = sns.lineplot(
-    data = repeated_res,
-    x = 'sample',
-    y = 'CI width',
-    ci='sd'
-)
-filename = os.path.join(ci_fig,"bout timing sensitivity CI width.pdf")
-plt.savefig(filename,format='PDF')
-# %%

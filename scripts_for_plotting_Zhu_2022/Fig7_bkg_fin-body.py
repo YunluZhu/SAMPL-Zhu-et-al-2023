@@ -11,6 +11,7 @@ zeitgeber time? Yes
 
 #%%
 import os
+from plot_functions.plt_tools import round_half_up
 import pandas as pd # pandas library
 import numpy as np # numpy
 import seaborn as sns
@@ -28,7 +29,7 @@ pick_data = '7dd_bkg'
 which_zeitgeber = 'day'
 DAY_RESAMPLE = 1000
 NIGHT_RESAMPLE = 500
-if_use_maxAngvelTime_perCondition = 1 # if to calculate max adjusted angvel time for each condition and selectt range for body rotation differently
+if_use_maxAngvelTime_perCondition = 0 # if to calculate max adjusted angvel time for each condition and selectt range for body rotation differently
                                         # or to use -250ms to -50ms for all conditions
 # %%
 def sigmoid_fit(df, x_range_to_fit,func,**kwargs):
@@ -74,7 +75,7 @@ def sigfunc_4free(x, a, b, c, d):
 root, FRAME_RATE = get_data_dir(pick_data)
 
 X_RANGE = np.arange(-5,10.01,0.01)
-BIN_WIDTH = 0.5
+BIN_WIDTH = 0.8
 AVERAGE_BIN = np.arange(min(X_RANGE),max(X_RANGE),BIN_WIDTH)
 
 print("- Figure 7: ZF strains - Fin-body coordination")
@@ -100,7 +101,7 @@ if if_use_maxAngvelTime_perCondition:
     max_angvel_time, all_cond1, all_cond2 = get_max_angvel_rot(root, FRAME_RATE, ztime = which_zeitgeber)
     all_feature_cond, all_cond1, all_cond2 = get_bout_features(root, FRAME_RATE, ztime = which_zeitgeber, max_angvel_time = max_angvel_time)
 else:
-    all_feature_cond, all_cond1, all_cond2 = get_bout_features(root, FRAME_RATE, ztime = which_zeitgeber )#, max_angvel_time = max_angvel_time)
+    all_feature_cond, all_cond1, all_cond2 = get_bout_features(root, FRAME_RATE, ztime = which_zeitgeber )
 
 
 # %% tidy data
@@ -193,7 +194,7 @@ g = sns.relplot(x='Rotation (deg)',y='Attack angle (deg)', data=all_y,
                 kind='line',
                 col='dpf', col_order=all_cond1,
                 row = 'ztime', row_order=all_ztime,
-                hue='condition', hue_order = all_cond2,ci='sd',
+                hue='condition', hue_order = all_cond2,errorbar='sd',
                 )
 for i , g_row in enumerate(g.axes):
     for j, ax in enumerate(g_row):
@@ -206,7 +207,7 @@ for i , g_row in enumerate(g.axes):
 upper = np.percentile(df_toplt[which_atk_ang], 80)
 lower = np.percentile(df_toplt[which_atk_ang], 24)
 g.set(ylim=(lower, upper))
-g.set(xlim=(-2, 8))
+g.set(xlim=(-2, 6))
 
 filename = os.path.join(fig_dir,"attack angle vs rot to angvel max.pdf")
 plt.savefig(filename,format='PDF')
@@ -228,15 +229,15 @@ s=8,
 alpha=0.3,
 height=3,
 aspect=1,
-zorder=1,
+# zorder=1,
 )
 p.map(sns.pointplot,'condition',coef_name,
     markers=['d','d','d'],
     order=all_cond2,
     join=False, 
-    ci=None,
+    errorbar=None,
     color='black',
-    zorder=100,
+    # zorder=100,
     data=all_coef)
 filename = os.path.join(fig_dir,f"{coef_name} .pdf")
 plt.savefig(filename,format='PDF')
@@ -249,7 +250,7 @@ for coef_name in ['k','xval','min','height','slope']:
     # p = sns.catplot(
     #     data = all_coef, y=coef_name,x='condition',kind='point',join=False,
     #     col='dpf',col_order=all_cond1,
-    #     ci='sd',
+    #     errorbar='sd',
     #     row = 'ztime', row_order=all_ztime,
     #     # units=excluded_exp,
     #     hue='condition', dodge=True,
@@ -275,15 +276,15 @@ for coef_name in ['k','xval','min','height','slope']:
     alpha=0.3,
     height=3,
     aspect=1,
-    zorder=1,
+    # zorder=1,
     )
     p.map(sns.pointplot,'condition',coef_name,
         markers=['d','d','d'],
         order=all_cond2,
         join=False, 
-        ci=None,
+        errorbar=None,
         color='black',
-        zorder=100,
+        # zorder=100,
         data=all_coef)
     filename = os.path.join(fig_dir,f"{coef_name} .pdf")
     plt.savefig(filename,format='PDF')

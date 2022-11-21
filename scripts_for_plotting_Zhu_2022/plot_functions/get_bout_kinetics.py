@@ -8,6 +8,7 @@ from plot_functions.get_bout_features import (get_bout_features,extract_bout_fea
 from numpy.polynomial.polynomial import Polynomial
 from scipy.stats import pearsonr 
 from scipy.optimize import curve_fit
+from plot_functions.plt_tools import round_half_up
 
 
 def sigmoid_fit2(x_val, y_val,func,revFunc,**kwargs):
@@ -91,8 +92,8 @@ def get_bout_kinetics(root, FRAME_RATE,**kwargs):
     peak_idx , total_aligned = get_index(FRAME_RATE)
     T_start = -0.3
     T_end = 0.25
-    idx_start = int(peak_idx + T_start * FRAME_RATE)
-    idx_end = int(peak_idx + T_end * FRAME_RATE)
+    idx_start = round_half_up(peak_idx + T_start * FRAME_RATE)
+    idx_end = round_half_up(peak_idx + T_end * FRAME_RATE)
     idxRANGE = [idx_start,idx_end]
     # spd_bins = [3.5,5.5,7,10,100]
     TSP_THRESHOLD = [-np.Inf,-50,50,np.Inf]
@@ -140,14 +141,14 @@ def get_bout_kinetics(root, FRAME_RATE,**kwargs):
                     exp_data = pd.read_hdf(f"{exp_path}/bout_data.h5", key='prop_bout_aligned')#.loc[:,['propBoutAligned_angVel','propBoutAligned_speed','propBoutAligned_accel','propBoutAligned_heading','propBoutAligned_pitch']]
                     exp_data = exp_data.assign(ang_speed=exp_data['propBoutAligned_angVel'].abs())
                     # assign frame number, total_aligned frames per bout
-                    exp_data = exp_data.assign(idx=int(len(exp_data)/total_aligned)*list(range(0,total_aligned)))
+                    exp_data = exp_data.assign(idx=round_half_up(len(exp_data)/total_aligned)*list(range(0,total_aligned)))
 
                     # - get the index of the rows in exp_data to keep (for each bout, there are range(0:51) frames. keep range(20:41) frames)
                     bout_time = pd.read_hdf(f"{exp_path}/bout_data.h5", key='prop_bout2').loc[:,'aligned_time']
                     
                     # truncate first, just incase some aligned bouts aren't complete
                     for i in bout_time.index:
-                        rows.extend(list(range(i*total_aligned+int(idxRANGE[0]),i*total_aligned+int(idxRANGE[1]))))
+                        rows.extend(list(range(i*total_aligned+round_half_up(idxRANGE[0]),i*total_aligned+round_half_up(idxRANGE[1]))))
                     
                     # assign bout numbers
                     trunc_exp_data = exp_data.loc[rows,:]
@@ -169,7 +170,7 @@ def get_bout_kinetics(root, FRAME_RATE,**kwargs):
                     tsp_filter = pd.cut(this_ztime_exp_features['tsp_peak'],TSP_THRESHOLD,labels=['too_neg','select','too_pos'])
                     this_ztime_exp_features = this_ztime_exp_features.loc[tsp_filter=='select',:].reset_index(drop=True)
                     if this_ztime_exp_features.groupby('ztime').size().min() < 10:
-                        print(f"Too few bouts for kinetic analysis, consider removing the dataset: exp")
+                        prround_half_up(f"Too few bouts for kinetic analysis, consider removing the dataset: exp")
                     this_exp_kinetics = this_ztime_exp_features.groupby('ztime').apply(
                         lambda x: get_kinetics(x)
                     ).reset_index()
