@@ -21,7 +21,9 @@ Build with Python3.8. See `environment.yml` for required packages.
 
 `docs` contains a copy of catalog files generated after running `.../src/vf_analysis/vf_analysis.py` and expected number of swim bouts captured over 24 hrs per box in constant dark condition.
 
-`sample figures` contains plots that can be generated using scripts under `.../src/vf_visualization/`
+`sample figures` contains plots generated using scripts under `.../src/vf_visualization/`
+
+`Manuscript figures` has all figures in the manuscript generated using scripts under `scripts_for_plotting_Zhu_2022`
 
 ### Analyze raw data files
 

@@ -29,59 +29,58 @@ def data_dir():
     }
     return data_directory_dict
 
+# # Alternatively, one can make a user defined dictionary containing all directories
+# root_dict = {
+#         '7dd_combined': '/Volumes/LabData/manuscript data/2022-09 VF method v2/behavior data/DD_7dpf_combined', # directory for folder "DD_7dpf_combined"
+#         'finless': '/Volumes/LabData/manuscript data/2022-09 VF method v2/behavior data/DD_finless', # directory for folder "DD_finless"
+#         '7dd_bkg': '/Volumes/LabData/manuscript data/2022-09 VF method v2/behavior data/DD_7dpf_bkg', # directory for folder "DD_7dpf_bkg"
+#     }
 
-
-root_dict = {
-        '7dd_combined': '/Volumes/LabData/manuscript data/2022-09 VF method v2/behavior data/DD_7dpf_combined', # directory for folder "DD_7dpf_combined"
-        'finless': '/Volumes/LabData/manuscript data/2022-09 VF method v2/behavior data/DD_finless', # directory for folder "DD_finless"
-        '7dd_bkg': '/Volumes/LabData/manuscript data/2022-09 VF method v2/behavior data/DD_7dpf_bkg', # directory for folder "DD_7dpf_bkg"
-    }
-
-# root_dict = data_dir()
+root_dict = data_dir()
 
 # ––– Figure 2: swim parameter distribution and timeseries
 
-# Fig2_parameter_distribution_prob(root_dict['7dd_combined'])
-# plt.close('all')
-# Fig2_parameters_alignedAverage(root_dict['7dd_combined'])
-# plt.close('all')
-# Fig2_throughput(root_dict['7dd_combined'])
-# plt.close('all')
+Fig2_parameter_distribution_prob(root_dict['7dd_combined'])
+plt.close('all')
+Fig2_parameters_alignedAverage(root_dict['7dd_combined'])
+plt.close('all')
+Fig2_throughput(root_dict['7dd_combined'])
+plt.close('all')
 
 # ––– Figure 3: bout timing and sensitivity
 
-# Fig3_bout_timing(root_dict['7dd_combined'])
-# plt.close('all')
+Fig3_bout_timing(root_dict['7dd_combined'])
+plt.close('all')
 
 # ––– Figure 4: steering gain
 
-# Fig4_trajDeviation_pitchChg(root_dict['7dd_combined'])
-# plt.close('all')
-# Fig4_steering_fit(root_dict['7dd_combined'])
-# plt.close('all')
+Fig4_trajDeviation_pitchChg(root_dict['7dd_combined'])
+plt.close('all')
+Fig4_steering_fit(root_dict['7dd_combined'])
+plt.close('all')
 
 # ––– Figure 5: fin-body coordination
 
-# Fig5_time_of_maxAngvel(root_dict['7dd_combined'])
-# plt.close('all')
-# Fig5_fin_body_coordination(root_dict['7dd_combined'], root_dict['finless'])
-# plt.close('all')
+Fig5_time_of_maxAngvel(root_dict['7dd_combined'])
+plt.close('all')
+Fig5_fin_body_coordination(root_dict['7dd_combined'], root_dict['finless'])
+plt.close('all')
 
 # ––– Figure 6: righting gain
 
-# Fig6_pitch_timeseries(root_dict['7dd_combined'])
-# plt.close('all')
-# Fig6_righting_fit(root_dict['7dd_combined'])
-# plt.close('all')
+Fig6_pitch_timeseries(root_dict['7dd_combined'])
+plt.close('all')
+Fig6_righting_fit(root_dict['7dd_combined'])
+plt.close('all')
 
 # ––– Figure 7: measurements of different zebrafish strains
 
-# Fig7_bkg_IBI(root_dict['7dd_bkg'])
-# plt.close('all')
-# Fig7_bkg_timing(root_dict['7dd_bkg'])
-# plt.close('all')
-# Fig7_bkg_steering_righting(root_dict['7dd_bkg'])
-# plt.close('all')
+Fig7_bkg_IBI(root_dict['7dd_bkg'])
+plt.close('all')
+Fig7_bkg_timing(root_dict['7dd_bkg'])
+plt.close('all')
+Fig7_bkg_steering_righting(root_dict['7dd_bkg'])
+plt.close('all')
 Fig7_bkg_fin_body(root_dict['7dd_bkg'])
 plt.close('all')
 
