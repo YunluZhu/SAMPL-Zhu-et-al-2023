@@ -36,7 +36,7 @@ def plt_KDE(all_data_cond,hue_order):
     #     df_to_plot = df.loc[(df['dpf']==plt_dpf[i]) & (df['condition']==plt_condition[i]),:]
     #     print(f'* {plt_dpf[i]} dpf | {plt_condition[i]}')
     #     sns.jointplot(df_to_plot['pre_posture_chg'], df_to_plot['atk_ang'], kind="kde", height=5, space=0, xlim=(-12, 12), ylim=(-20, 25))
-    # plt.show()
+    # 
 
     # # %%
     # # pre_pitch - righting rot KDE joint plot
@@ -52,7 +52,7 @@ def plt_KDE(all_data_cond,hue_order):
     #     df_to_plot = df.loc[(df['dpf']==plt_dpf[i]) & (df['condition']==plt_condition[i]),:]
     #     print(f'* {plt_dpf[i]} dpf | {plt_condition[i]}')
     #     sns.jointplot(df_to_plot['pre_pitch'], df_to_plot['decel_rot'], kind="kde", height=5, space=0, xlim=(-12, 12), ylim=(-20, 25))
-    # # plt.show()
+    # # 
 
     # # pitch - pre_pitch
     # flatui = ["#D0D0D0"] * (all_data_cond.groupby('condition').size().max())
@@ -105,8 +105,6 @@ def plt_meanData(mean_data_cond,hue_order):
     flatui = ["#D0D0D0"] * (mean_data_cond.groupby('condition').size().max())
 
     # %%
-    # plot mean attack angles, mean max speed, mean posture change (Figure 1—figure supplement 3)
-
     multi_comp = MultiComparison(mean_data_cond['atkAng'], mean_data_cond['dpf']+mean_data_cond['condition'])
     print('* attack angles')
     print(multi_comp.tukeyhsd().summary())
@@ -131,7 +129,7 @@ def plt_meanData(mean_data_cond,hue_order):
                     linewidth=0,
                     alpha=0.9,
                     order=hue_order,
-                    ci=None,
+                    
                     markers='d',
                     ax=ax
                     )
@@ -142,4 +140,4 @@ def plt_meanData(mean_data_cond,hue_order):
 
         g.legend_.remove()
 
-    plt.show()
+    

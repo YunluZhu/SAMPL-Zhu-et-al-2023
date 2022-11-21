@@ -1,27 +1,3 @@
-""" Estimate the number of bouts required for various regression
-
-Steps:
-1. determine list of N for bouts to sample
-2. sampling_regression_rep() samples bouts and calculates regression stats
-    2.1 repeat 20 times for each N in the list of bouts to sample
-    2.2 sample N bouts from the dataset
-    2.3 if to bootstrap, bootstrap the same sampled dataset, run following steps for 20 times, if not, use the raw sampled dataset, run following steps once
-    2.4 call regression_func(), calculate value, R2, sigma for value
-3. run function plot_model_R2_confidence_interval(), which:
-    3.0. for each alpha given
-    3.1. Calculates mean R2 from 20x repeats for each bout number
-    3.2. Calculates sem of R2
-    3.3. Calculates CI width for R2
-    3.4. plot CI width as a function of bout number
-    3.5. return, mean R2
-4. determine list of N for bouts to sample
-5. repeat step 2, without bootstrap resampling
-6. run function plot_estimation_error(), which:
-    6.1 calculates mean sigma from the 20 sigma from resampled results
-    6.2 plot sigma vs bout number
-    
-"""
-
 #%%
 # import sys
 # from ensurepip import bootstrap
@@ -31,19 +7,15 @@ import pandas as pd # pandas library
 import numpy as np # numpy
 import seaborn as sns
 import matplotlib.pyplot as plt
-from plot_functions.get_data_dir import (get_data_dir, get_figure_dir)
+from plot_functions.get_data_dir import (get_figure_dir)
 from plot_functions.get_bout_features import get_bout_features
 from plot_functions.get_IBIangles import get_IBIangles
-from plot_functions.plt_tools import (set_font_type, defaultPlotting)
+from plot_functions.plt_tools import (set_font_type)
 from scipy.optimize import curve_fit
 import matplotlib as mpl
 from scipy.stats import linregress
 import scipy.stats as st
-# from statsmodels.stats.power import (TTestIndPower, TTestPower, FTestPower)
 from sklearn.metrics import r2_score
-
-set_font_type()
-mpl.rc('figure', max_open_warning = 0)
 
 # %%
 def sampling_regression_rep(df, list_of_sample_N, regression_func, bootstrap):
@@ -141,47 +113,11 @@ def plot_model_R2_confidence_interval(df_tocalc, deg_free, nobs_col = 'nobs', r_
     sns.despine()
     plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0)
     g.set(title=fig_name)
+    ci_fig = get_figure_dir('Fig_8')
     filename = os.path.join(ci_fig,fig_name+".pdf")
     plt.savefig(filename,format='PDF')
     return res
-
-# def plot_estimation_error(df_tocalc, nobs_col = 'nobs', value_col = 'values', sigma_col = 'sigma', fig_name = 'Est error vs bout number'):
-#     # percentChg_list = np.array([0.01, 0.02, 0.05, 0.1])
-#     res = pd.DataFrame()
-#     # for percent_chg in percentChg_list:
-#     est_error = []
-#     nobs_list = []
-#     for nobs, group in df_tocalc.groupby(nobs_col):
-#         mu = group[value_col].mean()
-#         sigma = group[sigma_col].mean()
-#         est_error.append(sigma)
-#         nobs_list.append(nobs)
-#     to_concat = pd.DataFrame (data={
-#         'est_error': est_error,
-#         'bout number': nobs_list,
-#         # 'percent_chg': percent_chg,
-#         })
-#     res = pd.concat([res,to_concat],ignore_index=True)
-#     plt.figure(figsize=(4,3))
-#     g = sns.lineplot(
-#         data = res,
-#         x = 'bout number',
-#         y = 'est_error',
-#         # hue = 'percent_chg',
-#         legend='full'
-#     )
-#     # if res['effect_size'].max() > 2:
-#     #     g.set(xlim=(0,2))
-#     # else:
-#     #     g.set(xlim=(0,None))
-#     sns.despine()
-#     # plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0)
-#     g.set(title=fig_name)
-#     filename = os.path.join(ci_fig,fig_name+".pdf")
-#     plt.savefig(filename,format='PDF')
-#     return res
-
-    
+   
 def ffunc1(x, a, b, c):
     # parabola function
     return a*((x-b)**2)+c
@@ -229,30 +165,6 @@ def sigfunc_4free(x, a, b, c, d):
     y = c + (d)/(1 + np.exp(-(a*(x + b))))
     return y
 
-# %%
-# Select data and create figure folder
-
-pick_data = 'all_7dd'
-which_ztime = 'day'
-root, FRAME_RATE = get_data_dir(pick_data)
-
-ci_fig = get_figure_dir('Fig_8')
-
-try:
-    os.makedirs(ci_fig)
-except:
-    pass
-# %% get features
-all_feature_cond, all_cond1, all_cond2 = get_bout_features(root, FRAME_RATE, ztime=which_ztime)
-all_feature_cond = all_feature_cond.sort_values(by=['condition','expNum']).reset_index(drop=True)
-IBI_angles, cond1_all, cond2_all= get_IBIangles(root, FRAME_RATE, ztime=which_ztime)
-IBI_angles = IBI_angles.assign(bout_freq=1/IBI_angles['propBoutIEI'])
-
-# %% –—————————————————————————
-
-print("- Figure 8: bout timing modeling & sensitivity")
-IBI_angles.dropna(inplace=True)
-
 def IBI_timging_regression_stats(df, sample_N):
     X_RANGE_FULL = range(-30,41,1)
     coef, fitted_y, sigma, r_squared = parabola_fit2(df, X_RANGE_FULL)
@@ -263,17 +175,6 @@ def IBI_timging_regression_stats(df, sample_N):
     r_squared = 1 - (1 - R2) * (sample_N - 1) / (sample_N - p - 1)
     return E_sensitivity, r_squared, sigma_sensitivity
 
-list_of_sample_N = np.linspace(500,len(IBI_angles)//1000 * 1000,8).astype(int)
-
-df_tocalc = sampling_regression_rep(IBI_angles, list_of_sample_N, IBI_timging_regression_stats, bootstrap=True)
-power = plot_model_R2_confidence_interval(df_tocalc, 3, fig_name='Bout timing parabola modeling - R2 CI by alpha')
-
-# list_of_sample_N = np.linspace(500,5000,8).astype(int)
-# df_tocalc = sampling_regression_rep(IBI_angles, list_of_sample_N, IBI_timging_regression_stats, bootstrap=False)
-# effect_size = plot_estimation_error(df_tocalc, fig_name='Sensitivity - estimated error')
-
-# %% –—————————————————————————
-print("- Figure 8: Steering fit & steering gain")
 def steering_regression_stats(df, sample_N):
     xcol = 'traj_peak'
     ycol = 'pitch_peak'
@@ -286,16 +187,6 @@ def steering_regression_stats(df, sample_N):
     r_squared_adj = 1 - (1 - R2) * (sample_N - 1) / (sample_N - p - 1)
     return slope, r_squared_adj, std_err 
 
-list_of_sample_N = np.linspace(500,len(all_feature_cond)//1000*1000,8).astype(int)
-df_tocalc = sampling_regression_rep(all_feature_cond, list_of_sample_N, steering_regression_stats, bootstrap=True)
-power = plot_model_R2_confidence_interval(df_tocalc, 2, fig_name='Steering fit - R2 CI by alpha')
-
-# list_of_sample_N = np.linspace(50,1000,8).astype(int)
-# df_tocalc = sampling_regression_rep(all_feature_cond, list_of_sample_N, steering_regression_stats, bootstrap=False)
-# effect_size = plot_estimation_error(df_tocalc, fig_name='Steering gain - estimated error')
-
-# %%
-print("- Figure 8: Righting fit & righting gain")
 def righting_regression_stats(df, sample_N):
     xcol = 'pitch_initial'
     ycol = 'rot_l_decel'
@@ -307,19 +198,6 @@ def righting_regression_stats(df, sample_N):
     R2 = r_value**2
     r_squared_adj = 1 - (1 - R2) * (sample_N - 1) / (sample_N - p - 1)
     return slope*(-1), r_squared_adj, std_err 
-
-
-list_of_sample_N = np.linspace(500,len(all_feature_cond)//1000*1000,8).astype(int)
-df_tocalc = sampling_regression_rep(all_feature_cond, list_of_sample_N, righting_regression_stats, bootstrap=True)
-power = plot_model_R2_confidence_interval(df_tocalc, 2, fig_name='Righting fit - R2 CI by alpha')
-
-# effect size
-# list_of_sample_N = np.linspace(50,1000,8).astype(int)
-# df_tocalc = sampling_regression_rep(all_feature_cond, list_of_sample_N, righting_regression_stats, bootstrap=False)
-# effect_size = plot_estimation_error(df_tocalc, fig_name='Righting gain - estimated error')
-
- # %% ————————————
-print("- Figure 8: Fin-body coordination")
 
 def fin_body_regression_stats(df, sample_N):
     X_RANGE = np.arange(-2,8.01,0.01)
@@ -336,14 +214,99 @@ def fin_body_regression_stats(df, sample_N):
     R2 = r_squared
     r_squared = 1 - (1 - R2) * (sample_N - 1) / (sample_N - p - 1)
     return slope, r_squared, np.sqrt(slope_var)
-# for righting gain
-bouts_to_plot = all_feature_cond.loc[all_feature_cond['spd_peak']>=7]
-
-list_of_sample_N = np.linspace(2000,len(bouts_to_plot)//1000*1000,8).astype(int)
-df_tocalc = sampling_regression_rep(bouts_to_plot, list_of_sample_N, fin_body_regression_stats, bootstrap=True)
-power = plot_model_R2_confidence_interval(df_tocalc, 4, fig_name='Fin-body modeling - R2 CI by alpha')
-
-# df_tocalc = sampling_regression_rep(bouts_to_plot, list_of_sample_N, fin_body_regression_stats, bootstrap=False)
-# effect_size = plot_estimation_error(df_tocalc, fig_name='Fin-body ratio - estimated error')
 
 # %%
+def Fig8_modeling_stats(root):
+    """ Estimate the number of bouts required for various regression
+
+    Steps:
+    1. determine list of N for bouts to sample
+    2. sampling_regression_rep() samples bouts and calculates regression stats
+        2.1 repeat 20 times for each N in the list of bouts to sample
+        2.2 sample N bouts from the dataset
+        2.3 if to bootstrap, bootstrap the same sampled dataset, run following steps for 20 times, if not, use the raw sampled dataset, run following steps once
+        2.4 call regression_func(), calculate value, R2, sigma for value
+    3. run function plot_model_R2_confidence_interval(), which:
+        3.0. for each alpha given
+        3.1. Calculates mean R2 from 20x repeats for each bout number
+        3.2. Calculates sem of R2
+        3.3. Calculates CI width for R2
+        3.4. plot CI width as a function of bout number
+        3.5. return, mean R2
+    4. determine list of N for bouts to sample
+    5. repeat step 2, without bootstrap resampling
+    6. run function plot_estimation_error(), which:
+        6.1 calculates mean sigma from the 20 sigma from resampled results
+        6.2 plot sigma vs bout number
+    """
+    
+    set_font_type()
+    mpl.rc('figure', max_open_warning = 0)
+    
+    # Select data and create figure folder
+    which_ztime = 'day'
+    FRAME_RATE = 166
+    
+    ci_fig = get_figure_dir('Fig_8')
+
+    try:
+        os.makedirs(ci_fig)
+    except:
+        pass
+
+    all_feature_cond, all_cond1, all_cond2 = get_bout_features(root, FRAME_RATE, ztime=which_ztime)
+    all_feature_cond = all_feature_cond.sort_values(by=['condition','expNum']).reset_index(drop=True)
+    IBI_angles, cond1_all, cond2_all= get_IBIangles(root, FRAME_RATE, ztime=which_ztime)
+    IBI_angles = IBI_angles.assign(bout_freq=1/IBI_angles['propBoutIEI'])
+
+    print("- Figure 8: bout timing modeling & sensitivity")
+    IBI_angles.dropna(inplace=True)
+
+    list_of_sample_N = np.linspace(500,len(IBI_angles)//1000 * 1000,8).astype(int)
+
+    df_tocalc = sampling_regression_rep(IBI_angles, list_of_sample_N, IBI_timging_regression_stats, bootstrap=True)
+    power = plot_model_R2_confidence_interval(df_tocalc, 3, fig_name='Bout timing parabola modeling - R2 CI by alpha')
+
+    # list_of_sample_N = np.linspace(500,5000,8).astype(int)
+    # df_tocalc = sampling_regression_rep(IBI_angles, list_of_sample_N, IBI_timging_regression_stats, bootstrap=False)
+    # effect_size = plot_estimation_error(df_tocalc, fig_name='Sensitivity - estimated error')
+
+    print("- Figure 8: Steering fit & steering gain")
+
+    list_of_sample_N = np.linspace(500,len(all_feature_cond)//1000*1000,8).astype(int)
+    df_tocalc = sampling_regression_rep(all_feature_cond, list_of_sample_N, steering_regression_stats, bootstrap=True)
+    power = plot_model_R2_confidence_interval(df_tocalc, 2, fig_name='Steering fit - R2 CI by alpha')
+
+    # list_of_sample_N = np.linspace(50,1000,8).astype(int)
+    # df_tocalc = sampling_regression_rep(all_feature_cond, list_of_sample_N, steering_regression_stats, bootstrap=False)
+    # effect_size = plot_estimation_error(df_tocalc, fig_name='Steering gain - estimated error')
+
+    print("- Figure 8: Righting fit & righting gain")
+
+    list_of_sample_N = np.linspace(500,len(all_feature_cond)//1000*1000,8).astype(int)
+    df_tocalc = sampling_regression_rep(all_feature_cond, list_of_sample_N, righting_regression_stats, bootstrap=True)
+    power = plot_model_R2_confidence_interval(df_tocalc, 2, fig_name='Righting fit - R2 CI by alpha')
+
+    # effect size
+    # list_of_sample_N = np.linspace(50,1000,8).astype(int)
+    # df_tocalc = sampling_regression_rep(all_feature_cond, list_of_sample_N, righting_regression_stats, bootstrap=False)
+    # effect_size = plot_estimation_error(df_tocalc, fig_name='Righting gain - estimated error')
+
+    print("- Figure 8: Fin-body coordination")
+
+
+    # for righting gain
+    bouts_to_plot = all_feature_cond.loc[all_feature_cond['spd_peak']>=7]
+
+    list_of_sample_N = np.linspace(2000,len(bouts_to_plot)//1000*1000,8).astype(int)
+    df_tocalc = sampling_regression_rep(bouts_to_plot, list_of_sample_N, fin_body_regression_stats, bootstrap=True)
+    power = plot_model_R2_confidence_interval(df_tocalc, 4, fig_name='Fin-body modeling - R2 CI by alpha')
+
+    # df_tocalc = sampling_regression_rep(bouts_to_plot, list_of_sample_N, fin_body_regression_stats, bootstrap=False)
+    # effect_size = plot_estimation_error(df_tocalc, fig_name='Fin-body ratio - estimated error')
+
+# %%
+if __name__ == "__main__":
+    # if to use Command Line Inputs
+    root = input("- Data directory: where is folder 'DD_7dpf_combined'? \n")
+    Fig8_modeling_stats(root)

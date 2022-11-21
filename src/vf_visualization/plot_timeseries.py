@@ -170,7 +170,6 @@ def plot_aligned(root):
                 )
         p.map(
             plt.axvline, x=0, linewidth=1, color=".3", 
-            # zorder=0
             )
         plt.savefig(os.path.join(fig_dir, f"{feature_toplt}_timeSeries_up_dn.pdf"),format='PDF')
     print("Mean bout parameters")
@@ -181,7 +180,6 @@ def plot_aligned(root):
                 )
         p.map(
             plt.axvline, x=0, linewidth=1, color=".3", 
-            # zorder=0
             )
         plt.savefig(os.path.join(fig_dir, f"{feature_toplt}_timeSeries.pdf"),format='PDF')
 

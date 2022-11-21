@@ -1,42 +1,19 @@
-""" Estimate the number of bouts required for various regression
-
-Steps:
-    1. Sample N datapoints from total dataset, N should be the bout number plotted
-    2. Bootstrap sampling of the sampled data, repeat x20 for estimation of variance and mean(sigma) for coef
-    3. Do regression, return R2 (adjusted), sigma (variance of the desired coef per regression)
-    4. run function plot_model_R2_confidence_interval(), which:
-        4.0. for each alpha given
-        4.1. Calculates mean R2 from 20x repeats for each bout number
-        4.2. Calculates Cohen's f2, which is an indicator of effect size, from each R2
-        4.3. Calculates CI width of f2
-        4.4. plot CI width as a function of bout number
-        4.5. return, mean R2, mean f2
-    
-"""
-
 #%%
-# import sys
-# from ensurepip import bootstrap
 import os
 from plot_functions.plt_tools import round_half_up
 import pandas as pd # pandas library
 import numpy as np # numpy
 import seaborn as sns
 import matplotlib.pyplot as plt
-from plot_functions.get_data_dir import (get_data_dir, get_figure_dir)
+from plot_functions.get_data_dir import get_figure_dir
 from plot_functions.get_bout_features import get_bout_features
 from plot_functions.get_IBIangles import get_IBIangles
-from plot_functions.plt_tools import (set_font_type, defaultPlotting)
+from plot_functions.plt_tools import set_font_type
 from scipy.optimize import curve_fit
 import matplotlib as mpl
 from scipy.stats import linregress
-import scipy.stats as st
-# from statsmodels.stats.power import (TTestIndPower, TTestPower, FTestPower)
 from sklearn.metrics import r2_score
 from tqdm import tqdm
-
-set_font_type()
-mpl.rc('figure', max_open_warning = 0)
 
 # %%
 def sim_by_altered_coef(xdata, ydata, reg_func, coef_ori, coef_number_toAlter, change_ratio):
@@ -129,6 +106,8 @@ def calc_coef_effect_size(list_of_sample_N, xdata, ydata, sim_func, coef_ori_ful
     else:
         g.set(xlim=[0,2])
 
+    ci_fig = get_figure_dir('Fig_8')
+    
     sns.despine()
     plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0)
     g.set(title=fig_name)
@@ -161,10 +140,9 @@ def plot_estimation_error(df_tocalc, nobs_col = 'nobs', value_col = 'values', si
         # hue = 'percent_chg',
         legend='full'
     )
-    # if res['effect_size'].max() > 2:
-    #     g.set(xlim=(0,2))
-    # else:
-    #     g.set(xlim=(0,None))
+
+    ci_fig = get_figure_dir('Fig_8')
+
     sns.despine()
     plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0)
     g.set(title=fig_name)
@@ -178,6 +156,7 @@ def parabola_func(x, a, b, c):
 
 def linear_func(x, a, b):
     return a*x+b
+
 def parabola_fit(df, **kwargs):
     '''
     fit bout probability - pitch to parabola
@@ -229,125 +208,6 @@ def sigfunc_4free(x, a, b, c, d):
     y = c + (d)/(1 + np.exp(-(a*(x + b))))
     return y
 
-
-# %%
-# Select data and create figure folder
-
-pick_data = 'all_7dd'
-which_ztime = 'day'
-root, FRAME_RATE = get_data_dir(pick_data)
-
-ci_fig = get_figure_dir('Fig_8')
-
-try:
-    os.makedirs(ci_fig)
-except:
-    pass
-# %% get features
-all_feature_cond, all_cond1, all_cond2 = get_bout_features(root, FRAME_RATE, ztime=which_ztime)
-all_feature_cond = all_feature_cond.sort_values(by=['condition','expNum']).reset_index(drop=True)
-IBI_angles, cond1_all, cond2_all= get_IBIangles(root, FRAME_RATE, ztime=which_ztime)
-IBI_angles = IBI_angles.assign(bout_freq=1/IBI_angles['propBoutIEI'])
-
-# %% –—————————————————————————
-print("- Figure 8: sensitivity effect size")
-IBI_angles.dropna(inplace=True)
-
-def sensitivity_get_stats(ori_sample, sim_sample, master_sample):
-    dataset_dict = {
-        'master': master_sample,
-        'ori': ori_sample,
-        'sim': sim_sample
-    }
-    res_dict = {}
-    for key in dataset_dict:
-        data = dataset_dict[key]
-        data.columns = ['propBoutIEI_pitch','bout_freq']
-        coef_master, _, sigma_master, r_squared_master = parabola_fit(data)
-        res_dict['value_'+key] = coef_master.iloc[0,0]*1000
-        res_dict['sigma_'+key] = sigma_master[0]*1000
-    res = pd.DataFrame(data=res_dict, index=[0])
-    return res
-
-# def IBI_timging_sim_by_sensitivityChg(df, which_coef, diff_ratio):
-coef_ori_full, _,_, _ = parabola_fit(IBI_angles)
-coef_ori_full = coef_ori_full.values.flatten()
-
-coef_number_toAlter = 0
-xdata = IBI_angles['propBoutIEI_pitch']
-ydata = IBI_angles['bout_freq']
-
-# list_of_sample_N = np.linspace(500,len(IBI_angles)//1000 * 1000,8).astype(int)
-list_of_sample_N = np.linspace(200,5000,8).astype(int)
-# df_tocalc = calc_coef_effect_size(list_of_sample_N, xdata, ydata, parabola_func, coef_ori_full, coef_number_toAlter, sensitivity_get_stats)
-es = calc_coef_effect_size(list_of_sample_N, xdata, ydata, parabola_func, coef_ori_full, coef_number_toAlter, sensitivity_get_stats, fig_name = 'Sensitivity')
-
-# %% –—————————————————————————
-print("- Figure 8: steering gain effect size")
-def steeringGain_get_stats(ori_sample, sim_sample, master_sample):
-    dataset_dict = {
-        'master': master_sample,
-        'ori': ori_sample,
-        'sim': sim_sample
-    }
-    res_dict = {}
-    for key in dataset_dict:
-        data = dataset_dict[key]
-        xdata = data['x']
-        ydata = data['y']
-        slope, _, _, _, std_err = linregress(xdata, ydata)
-        res_dict['value_'+key] = slope
-        res_dict['sigma_'+key] = std_err
-    res = pd.DataFrame(data=res_dict, index=[0])
-    return res
-
-xcol = 'traj_peak'
-ycol = 'pitch_peak'
-xdata = all_feature_cond[xcol] 
-ydata = all_feature_cond[ycol]
-model_par = linregress(xdata, ydata)
-slope, intercept, r_value, p_value, std_err = model_par
-coef_ori_full = [slope, intercept]
-coef_number_toAlter = 0
-
-list_of_sample_N = np.linspace(20,500,8).astype(int)
-es = calc_coef_effect_size(list_of_sample_N, xdata, ydata, linear_func, coef_ori_full, coef_number_toAlter, steeringGain_get_stats, fig_name = 'Steering gain')
-
-# %% –—————————————————————————
-print("- Figure 8: righting gain effect size")
-def rightingGain_get_stats(ori_sample, sim_sample, master_sample):
-    dataset_dict = {
-        'master': master_sample,
-        'ori': ori_sample,
-        'sim': sim_sample
-    }
-    res_dict = {}
-    for key in dataset_dict:
-        data = dataset_dict[key]
-        xdata = data['x']
-        ydata = data['y']
-        slope, _, _, _, std_err = linregress(xdata, ydata)
-        res_dict['value_'+key] = slope * (-1)
-        res_dict['sigma_'+key] = std_err
-    res = pd.DataFrame(data=res_dict, index=[0])
-    return res
-
-xcol = 'pitch_initial'
-ycol = 'rot_l_decel'
-xdata = all_feature_cond[xcol] 
-ydata = all_feature_cond[ycol]
-model_par = linregress(xdata, ydata)
-slope, intercept, r_value, p_value, std_err = model_par
-coef_ori_full = [slope, intercept]
-coef_number_toAlter = 0
-
-list_of_sample_N = np.linspace(20,400,8).astype(int)
-es = calc_coef_effect_size(list_of_sample_N, xdata, ydata, linear_func, coef_ori_full, coef_number_toAlter, rightingGain_get_stats, fig_name = 'Righting gain')
-
-# %%
-print("- Figure 8: fin-body ratio effect size")
-bouts_to_plot = all_feature_cond.loc[all_feature_cond['spd_peak']>=7]
-
 def finBodyRatio_get_stats(ori_sample, sim_sample, master_sample):
     dataset_dict = {
         'master': master_sample,
@@ -372,21 +232,165 @@ def finBodyRatio_get_stats(ori_sample, sim_sample, master_sample):
     res = pd.DataFrame(data=res_dict, index=[0])
     return res
 
-coef_ori_full, _, sigma, r_squared = sigmoid_fit2(
-    bouts_to_plot, func=sigfunc_4free
-)
-E_height = coef_ori_full.iloc[0,3]
-E_k = coef_ori_full.iloc[0,0] 
-V_height = sigma[3]**2  # height error
-V_k = sigma[0]**2  # k error
-slope_var = (V_height*V_k + V_height*(E_k**2) +  V_k*(E_height**2)) * (1/4)**2  # estimate slope error
-slope = E_k * E_height / 4
+def sensitivity_get_stats(ori_sample, sim_sample, master_sample):
+    dataset_dict = {
+        'master': master_sample,
+        'ori': ori_sample,
+        'sim': sim_sample
+    }
+    res_dict = {}
+    for key in dataset_dict:
+        data = dataset_dict[key]
+        data.columns = ['propBoutIEI_pitch','bout_freq']
+        coef_master, _, sigma_master, r_squared_master = parabola_fit(data)
+        res_dict['value_'+key] = coef_master.iloc[0,0]*1000
+        res_dict['sigma_'+key] = sigma_master[0]*1000
+    res = pd.DataFrame(data=res_dict, index=[0])
+    return res
 
-coef_number_toAlter = 0 # change k, keep height the same
-xdata = bouts_to_plot['rot_to_max_angvel']
-ydata = bouts_to_plot['atk_ang']
-coef_ori_full = coef_ori_full.values.flatten()
-list_of_sample_N = np.linspace(2000,len(bouts_to_plot)//1000*1000,8).astype(int)
-es = calc_coef_effect_size(list_of_sample_N, xdata, ydata, sigfunc_4free, coef_ori_full, coef_number_toAlter, finBodyRatio_get_stats, fig_name = 'Fin-body ratio')
+def steeringGain_get_stats(ori_sample, sim_sample, master_sample):
+    dataset_dict = {
+        'master': master_sample,
+        'ori': ori_sample,
+        'sim': sim_sample
+    }
+    res_dict = {}
+    for key in dataset_dict:
+        data = dataset_dict[key]
+        xdata = data['x']
+        ydata = data['y']
+        slope, _, _, _, std_err = linregress(xdata, ydata)
+        res_dict['value_'+key] = slope
+        res_dict['sigma_'+key] = std_err
+    res = pd.DataFrame(data=res_dict, index=[0])
+    return res
 
+def rightingGain_get_stats(ori_sample, sim_sample, master_sample):
+    dataset_dict = {
+        'master': master_sample,
+        'ori': ori_sample,
+        'sim': sim_sample
+    }
+    res_dict = {}
+    for key in dataset_dict:
+        data = dataset_dict[key]
+        xdata = data['x']
+        ydata = data['y']
+        slope, _, _, _, std_err = linregress(xdata, ydata)
+        res_dict['value_'+key] = slope * (-1)
+        res_dict['sigma_'+key] = std_err
+    res = pd.DataFrame(data=res_dict, index=[0])
+    return res
+
+def Fig8_sims_effectSize(root):
+    """ Estimate the number of bouts required for various regression
+
+    Steps:
+        1. Sample N datapoints from total dataset, N should be the bout number plotted
+        2. Bootstrap sampling of the sampled data, repeat x20 for estimation of variance and mean(sigma) for coef
+        3. Do regression, return R2 (adjusted), sigma (variance of the desired coef per regression)
+        4. run function plot_model_R2_confidence_interval(), which:
+            4.0. for each alpha given
+            4.1. Calculates mean R2 from 20x repeats for each bout number
+            4.2. Calculates Cohen's f2, which is an indicator of effect size, from each R2
+            4.3. Calculates CI width of f2
+            4.4. plot CI width as a function of bout number
+            4.5. return, mean R2, mean f2
+        
+    """
+
+
+    # Select data and create figure folder
+    
+    set_font_type()
+    mpl.rc('figure', max_open_warning = 0)
+
+    which_ztime = 'day'
+    FRAME_RATE = 166
+    
+    ci_fig = get_figure_dir('Fig_8')
+
+    try:
+        os.makedirs(ci_fig)
+    except:
+        pass
+
+    all_feature_cond, all_cond1, all_cond2 = get_bout_features(root, FRAME_RATE, ztime=which_ztime)
+    all_feature_cond = all_feature_cond.sort_values(by=['condition','expNum']).reset_index(drop=True)
+    IBI_angles, cond1_all, cond2_all= get_IBIangles(root, FRAME_RATE, ztime=which_ztime)
+    IBI_angles = IBI_angles.assign(bout_freq=1/IBI_angles['propBoutIEI'])
+
+
+    print("- Figure 8: sensitivity effect size")
+    IBI_angles.dropna(inplace=True)
+
+    # def IBI_timging_sim_by_sensitivityChg(df, which_coef, diff_ratio):
+    coef_ori_full, _,_, _ = parabola_fit(IBI_angles)
+    coef_ori_full = coef_ori_full.values.flatten()
+
+    coef_number_toAlter = 0
+    xdata = IBI_angles['propBoutIEI_pitch']
+    ydata = IBI_angles['bout_freq']
+
+    # list_of_sample_N = np.linspace(500,len(IBI_angles)//1000 * 1000,8).astype(int)
+    list_of_sample_N = np.linspace(200,5000,8).astype(int)
+    # df_tocalc = calc_coef_effect_size(list_of_sample_N, xdata, ydata, parabola_func, coef_ori_full, coef_number_toAlter, sensitivity_get_stats)
+    es = calc_coef_effect_size(list_of_sample_N, xdata, ydata, parabola_func, coef_ori_full, coef_number_toAlter, sensitivity_get_stats, fig_name = 'Sensitivity')
+
+
+    print("- Figure 8: steering gain effect size")
+
+    xcol = 'traj_peak'
+    ycol = 'pitch_peak'
+    xdata = all_feature_cond[xcol] 
+    ydata = all_feature_cond[ycol]
+    model_par = linregress(xdata, ydata)
+    slope, intercept, r_value, p_value, std_err = model_par
+    coef_ori_full = [slope, intercept]
+    coef_number_toAlter = 0
+
+    list_of_sample_N = np.linspace(20,500,8).astype(int)
+    es = calc_coef_effect_size(list_of_sample_N, xdata, ydata, linear_func, coef_ori_full, coef_number_toAlter, steeringGain_get_stats, fig_name = 'Steering gain')
+
+
+    print("- Figure 8: righting gain effect size")
+
+    xcol = 'pitch_initial'
+    ycol = 'rot_l_decel'
+    xdata = all_feature_cond[xcol] 
+    ydata = all_feature_cond[ycol]
+    model_par = linregress(xdata, ydata)
+    slope, intercept, r_value, p_value, std_err = model_par
+    coef_ori_full = [slope, intercept]
+    coef_number_toAlter = 0
+
+    list_of_sample_N = np.linspace(20,400,8).astype(int)
+    es = calc_coef_effect_size(list_of_sample_N, xdata, ydata, linear_func, coef_ori_full, coef_number_toAlter, rightingGain_get_stats, fig_name = 'Righting gain')
+
+
+    print("- Figure 8: fin-body ratio effect size")
+    bouts_to_plot = all_feature_cond.loc[all_feature_cond['spd_peak']>=7]
+
+    coef_ori_full, _, sigma, r_squared = sigmoid_fit2(
+        bouts_to_plot, func=sigfunc_4free
+    )
+    E_height = coef_ori_full.iloc[0,3]
+    E_k = coef_ori_full.iloc[0,0] 
+    V_height = sigma[3]**2  # height error
+    V_k = sigma[0]**2  # k error
+    slope_var = (V_height*V_k + V_height*(E_k**2) +  V_k*(E_height**2)) * (1/4)**2  # estimate slope error
+    slope = E_k * E_height / 4
+
+    coef_number_toAlter = 0 # change k, keep height the same
+    xdata = bouts_to_plot['rot_to_max_angvel']
+    ydata = bouts_to_plot['atk_ang']
+    coef_ori_full = coef_ori_full.values.flatten()
+    list_of_sample_N = np.linspace(2000,len(bouts_to_plot)//1000*1000,8).astype(int)
+    es = calc_coef_effect_size(list_of_sample_N, xdata, ydata, sigfunc_4free, coef_ori_full, coef_number_toAlter, finBodyRatio_get_stats, fig_name = 'Fin-body ratio')
+
+    
 # %%
+if __name__ == "__main__":
+    # if to use Command Line Inputs
+    root = input("- Data directory: where is folder 'DD_7dpf_combined'? \n")
+    Fig8_sims_effectSize(root)

@@ -39,7 +39,6 @@ def extract_bout_features_v4(bout_data,peak_idx, FRAME_RATE, **kwargs):
         if key == 'idx_max_angvel':
             idx_max_angvel = value
     
-    
     this_exp_features = pd.DataFrame(data={
         'pitch_initial':bout_data.loc[bout_data['idx']==idx_initial,'propBoutAligned_pitch'].values, 
         'pitch_mid_accel':bout_data.loc[bout_data['idx']==idx_mid_accel,'propBoutAligned_pitch'].values, 

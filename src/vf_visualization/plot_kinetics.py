@@ -176,7 +176,6 @@ def plot_kinetics(root, **kwargs):
         g = sns.catplot(data = toplt,y = feature_toplt,
                         height=4, aspect=0.8, kind='point',
                         markers='d',sharey=False,
-                        # zorder=10
                         )
         filename = os.path.join(fig_dir,f"{feature_toplt}.pdf")
         plt.savefig(filename,format='PDF')

@@ -138,7 +138,6 @@ def plot_IBIposture(root, **kwargs):
         # plot mean data
         # g = sns.pointplot(y='Std of posture',
         #                   data=ang_std, 
-        #                   ci=95,
         #                     # linewidth=0,
         #                     alpha=0.9,
         #                     markers='d',
@@ -146,7 +145,6 @@ def plot_IBIposture(root, **kwargs):
         g = sns.catplot(data = ang_std,y = 'Std of posture',
                         height=4, aspect=0.8, kind='point',
                         markers='d',sharey=False,
-                        # zorder=10
                         )
         g = sns.despine(trim=False)
         filename = os.path.join(fig_dir, "inter-bout interval std(pitch).pdf")
