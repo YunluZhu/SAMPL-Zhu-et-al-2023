@@ -8,7 +8,7 @@ from astropy.stats import jackknife_resampling
 from scipy.optimize import curve_fit
 # from statsmodels.stats.multicomp import (pairwise_tukeyhsd, MultiComparison)
 from plot_functions.get_data_dir import (get_figure_dir)
-from plot_functions.plt_tools import (set_font_type, defaultPlotting)
+from plot_functions.plt_tools import (set_font_type, defaultPlotting, plot_pointplt)
 from plot_functions.get_IBIangles import get_IBIangles
 
 def distribution_binned_average(df, bin_width):
@@ -50,7 +50,7 @@ def Fig7_bkg_timing(root):
     defaultPlotting()
     # %%
     which_ztime = 'day'
-    SAMPLE_N = 1000
+    SAMPLE_N = 0
     FRAME_RATE = 166
     
     folder_dir = os.getcwd()
@@ -156,24 +156,8 @@ def Fig7_bkg_timing(root):
     # %%
     # plot all coef
     for i, coef_col_name in enumerate(coef_columns):
-        p = sns.catplot(
-            data = jackknifed_coef, y=coef_col_name,x='condition',kind='strip',
-            color = 'grey',
-            edgecolor = None,
-            linewidth = 0,
-            s=8, 
-            alpha=0.3,
-            height=3,
-            aspect=1
-        )
-        p.map(sns.pointplot,'condition',coef_col_name,
-            markers=['d','d','d'],
-            order=cond2_all,
-            join=False, 
-            
-            color='black',
-            data=jackknifed_coef)
-        filename = os.path.join(fig_dir,f"IBI {coef_names[i]} sample{SAMPLE_N} ± SD.pdf")
+        plot_pointplt(jackknifed_coef, coef_col_name, cond2_all)
+        filename = os.path.join(fig_dir,f"IBI {coef_names[i]}.pdf")
         plt.savefig(filename,format='PDF')
 
 

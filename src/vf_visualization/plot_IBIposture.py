@@ -109,11 +109,15 @@ def plot_IBIposture(root, **kwargs):
                 ) for idx_group in jackknife_idx], axis=1
             ).transpose()
         ang_std = [np.nanstd(all_angles.loc[all_angles['exp_num'].isin(idx_group),'propBoutIEI_pitch'].to_numpy().flatten()) for idx_group in jackknife_idx]
+        ang_mean = [np.nanmean(all_angles.loc[all_angles['exp_num'].isin(idx_group),'propBoutIEI_pitch'].to_numpy().flatten()) for idx_group in jackknife_idx]
+
         ang_std = pd.DataFrame(data={'Std of posture':ang_std, 
                                     'exp jackknifed':np.arange(0,expNum+1)})
     else:
         ang_distribution = pd.DataFrame(np.histogram(all_angles['propBoutIEI_pitch'].to_numpy().flatten(), bins=bins, density=True)).T
         ang_std = np.nanstd(all_angles['propBoutIEI_pitch'])
+        ang_mean = np.nanmean(all_angles['propBoutIEI_pitch'])
+
         
     ang_distribution.columns = ['Probability','Posture (deg)']
     ang_distribution.reset_index(drop=True,inplace=True)
@@ -150,12 +154,20 @@ def plot_IBIposture(root, **kwargs):
         filename = os.path.join(fig_dir, "inter-bout interval std(pitch).pdf")
         plt.savefig(filename,format='PDF')
         
-        mean_val = ang_std.mean()
+        output_df = pd.DataFrame(data={
+            'Std of posture':ang_std['Std of posture'].mean(),
+            'Mean IBI posture':np.mean(ang_mean),
+        },index=[0])
         filename = os.path.join(fig_dir,f"mean jackknifed std of IBI pitch.csv")
-        mean_val.to_csv(filename)
-        print(f"Standard deviation of posture = {mean_val.at['Std of posture']}")
+        output_df.to_csv(filename)
+        print(f"Standard deviation of posture = {output_df.loc[0,'Std of posture']}")
+        print(f"Average IBI posture = {output_df.loc[0,'Mean IBI posture']}")
+
     else:
-        print(f"Standard deviation of posture = {ang_std}")    
+        print(f"Standard deviation of posture = {ang_std}")  
+        print(f"Average IBI posture = {ang_mean}")  
+
+          
     
 
 if __name__ == "__main__":

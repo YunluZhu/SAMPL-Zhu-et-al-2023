@@ -4,6 +4,8 @@ import pandas as pd
 import numpy as np
 from decimal import Decimal
 import decimal
+import matplotlib.pyplot as plt
+
 
 def round_half_up(var):
     """round half up
@@ -83,3 +85,26 @@ def distribution_binned_average_nostd(df, by_col, bin_col, bin):
     grp = df.groupby(bins)
     df_out = grp[[by_col,bin_col]].mean()
     return df_out
+
+def plot_pointplt(data,col,order):
+    defaultPlotting(size=8)
+    plt.figure()
+    p = sns.catplot(
+        data = data, y=col,x='condition',kind='strip',
+        color = 'grey',
+        edgecolor = None,
+        linewidth = 0,
+        s=14, 
+        alpha=0.3,
+        height=1.75,
+        aspect=0.95,
+    )
+    p.map(sns.pointplot,'condition',col,
+        markers=['d','d','d'],
+        order=order,
+        join=False, 
+        scale=0.7,
+        errorbar=None,
+        color='black',
+        data=data)
+    return p

@@ -14,24 +14,24 @@ def main(root, sample):
     plt.close('all')
     plot_IBIposture(root, sample_bout=sample)
     
-    # plt.close('all')
-    # plot_parameters(root)
+    plt.close('all')
+    plot_parameters(root)
     
-    # plt.close('all')
-    # plot_kinetics(root, sample_bout=sample)
+    plt.close('all')
+    plot_kinetics(root, sample_bout=sample)
     
-    # # Timeseries for aligned bouts may take long to plot for large dataset (>10GB)
-    # plt.close('all')
-    # plot_aligned(root)
+    # Timeseries for aligned bouts may take long to plot for large dataset (>10GB)
+    plt.close('all')
+    plot_aligned(root)
     
-    # plt.close('all')
-    # plot_fin_body_coordination(root, sample_bout=sample)
+    plt.close('all')
+    plot_fin_body_coordination(root, sample_bout=sample)
     
-    # plt.close('all')
-    # plot_fin_body_coordination_byAngvelMax(root, sample_bout=sample)
+    plt.close('all')
+    plot_fin_body_coordination_byAngvelMax(root, sample_bout=sample)
     
-    # plt.close('all')
-    # plot_raw(root)
+    plt.close('all')
+    plot_raw(root)
     
 if __name__ == "__main__":
     root_dir = input("- Which data to plot? \n")

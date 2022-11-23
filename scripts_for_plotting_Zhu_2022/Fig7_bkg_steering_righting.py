@@ -3,7 +3,7 @@ import os
 import seaborn as sns
 import matplotlib.pyplot as plt
 from plot_functions.get_data_dir import ( get_figure_dir)
-from plot_functions.plt_tools import (set_font_type, defaultPlotting)
+from plot_functions.plt_tools import (set_font_type, defaultPlotting, plot_pointplt)
 from plot_functions.get_bout_kinetics import get_bout_kinetics
 
 def Fig7_bkg_steering_righting(root):
@@ -12,7 +12,7 @@ def Fig7_bkg_steering_righting(root):
     # %%
     # for day night split
     which_zeitgeber = 'day' # day night all
-    SAMPLE_NUM = 1000
+    SAMPLE_NUM = 0
     print("- Figure 7: ZF strains - Steering & Righting")
 
     FRAME_RATE = 166
@@ -26,7 +26,6 @@ def Fig7_bkg_steering_righting(root):
     except:
         pass
 
-
     # %%
     all_kinetic_cond, kinetics_jackknife, kinetics_bySpd_jackknife, all_cond1, all_cond2 = get_bout_kinetics(root, FRAME_RATE, ztime=which_zeitgeber, sample=SAMPLE_NUM)
     all_cond1.sort()
@@ -39,24 +38,25 @@ def Fig7_bkg_steering_righting(root):
     # print('plot jackknife data')
 
     for feature_toplt in (all_features):
-        p = sns.catplot(
-            data = toplt, y=feature_toplt,x='condition',kind='strip',
-            color = 'grey',
-            edgecolor = None,
-            linewidth = 0,
-            s=8, 
-            alpha=0.3,
-            height=3,
-            aspect=1,
-        )
-        p.map(sns.pointplot,'condition',feature_toplt,
-            markers=['d','d','d'],
-            order=all_cond2,
-            join=False, 
+        plot_pointplt(toplt, feature_toplt, all_cond2)
+        # p = sns.catplot(
+        #     data = toplt, y=feature_toplt,x='condition',kind='strip',
+        #     color = 'grey',
+        #     edgecolor = None,
+        #     linewidth = 0,
+        #     s=8, 
+        #     alpha=0.3,
+        #     height=3,
+        #     aspect=1,
+        # )
+        # p.map(sns.pointplot,'condition',feature_toplt,
+        #     markers=['d','d','d'],
+        #     order=all_cond2,
+        #     join=False, 
             
-            color='black',
-            data=toplt)
-        filename = os.path.join(fig_dir,f"{feature_toplt} .pdf")
+        #     color='black',
+        #     data=toplt)
+        filename = os.path.join(fig_dir,f"{feature_toplt}.pdf")
         plt.savefig(filename,format='PDF')
         
 # %%

@@ -8,15 +8,17 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from astropy.stats import jackknife_resampling
 from plot_functions.get_data_dir import ( get_figure_dir)
-from plot_functions.plt_tools import (defaultPlotting, set_font_type)
+from plot_functions.plt_tools import (defaultPlotting, set_font_type, plot_pointplt)
 from plot_functions.get_IBIangles import get_IBIangles
+
+
 
 def Fig7_bkg_IBI(root):
     defaultPlotting()
     set_font_type()
     # Paste root directory here
     which_zeitgeber = 'day'
-    DAY_RESAMPLE = 1000
+    DAY_RESAMPLE = 0
 
     # %%
 
@@ -24,7 +26,7 @@ def Fig7_bkg_IBI(root):
 
     FRAME_RATE = 166
     
-    folder_name = f'IBI compare'
+    folder_name = f'IBI features'
     folder_dir = get_figure_dir('Fig_7')
     fig_dir = os.path.join(folder_dir, folder_name)
 
@@ -112,33 +114,17 @@ def Fig7_bkg_IBI(root):
     # IBI_std_cond = IBI_angles_cond.groupby(['ztime','dpf','condition','exp','expNum']).std().reset_index()
     # IBI_std_day_resampled = IBI_angles_day_resampled.groupby(['ztime','dpf','condition','expNum']).std().reset_index()
 
-    coef_columns = ['IBI pitch std (deg)', 'IBI duration (s)', 'IBI pitch (deg)']
+    coef_columns = ['IBI pitch std (deg)', 'IBI pitch (deg)', 'IBI duration (s)']
     jackknifed_std = jackknifed_std.loc[:,['jackknifed_std','jackknifed_mean','jackknife_IBI','condition']]
     jackknifed_std.columns = coef_columns + ['condition']
+    
+    # plot IBI features
 
     for i, coef_col_name in enumerate(coef_columns):
-        p = sns.catplot(
-            data = jackknifed_std, y=coef_col_name,x='condition',kind='strip',
-            color = 'grey',
-            edgecolor = None,
-            linewidth = 0,
-            s=8, 
-            alpha=0.3,
-            height=3,
-            aspect=1,
-        )
-        p.map(sns.pointplot,'condition',coef_col_name,
-            markers=['d','d','d'],
-            order=cond2,
-            join=False, 
-            
-            color='black',
-            data=jackknifed_std)
+        plot_pointplt(jackknifed_std,coef_col_name,cond2)
         filename = os.path.join(fig_dir,f"{coef_col_name} .pdf")
         plt.savefig(filename,format='PDF')
 
-
-# %%
 
 # %%
 if __name__ == "__main__":

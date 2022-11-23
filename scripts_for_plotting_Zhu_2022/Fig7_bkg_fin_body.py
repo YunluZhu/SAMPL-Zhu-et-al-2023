@@ -9,35 +9,34 @@ from astropy.stats import jackknife_resampling
 from scipy.optimize import curve_fit
 from plot_functions.get_data_dir import (get_figure_dir)
 from plot_functions.get_bout_features import get_max_angvel_rot, get_bout_features
-from plot_functions.plt_tools import (set_font_type, defaultPlotting,distribution_binned_average_nostd)
+from plot_functions.plt_tools import (set_font_type, defaultPlotting, plot_pointplt, distribution_binned_average_nostd)
+from statsmodels.stats.multicomp import MultiComparison
 
-# %%
+    
 def sigmoid_fit(df, x_range_to_fit,func,**kwargs):
     lower_bounds = [0.1,0,-100,1]
-    upper_bounds = [10,20,2,100]
-    x0=[5, 1, 0, 5]
-    
-    for key, value in kwargs.items():
-        if key == 'a':
-            x0[0] = value
-            lower_bounds[0] = value-0.01
-            upper_bounds[0] = value+0.01
-        elif key == 'b':
-            x0[1] = value
-            lower_bounds[1] = value-0.01
-            upper_bounds[1] = value+0.01
-        elif key == 'c':
-            x0[2] = value
-            lower_bounds[2] = value-0.01
-            upper_bounds[2] = value+0.01
-        elif key =='d':
-            x0[3] = value
-            lower_bounds[3] = value-0.01
-            upper_bounds[3] = value+0.01
+    upper_bounds = [15,20,2,100]
+    x0=[3, 1, 0, 5]
+    # for key, value in kwargs.items():
+    #     if key == 'a':
+    #         x0[0] = value
+    #         lower_bounds[0] = value-0.01
+    #         upper_bounds[0] = value+0.01
+    #     elif key == 'b':
+    #         x0[1] = value
+    #         lower_bounds[1] = value-0.01
+    #         upper_bounds[1] = value+0.01
+    #     elif key == 'c':
+    #         x0[2] = value
+    #         lower_bounds[2] = value-0.01
+    #         upper_bounds[2] = value+0.01
+    #     elif key =='d':
+    #         x0[3] = value
+    #         lower_bounds[3] = value-0.01
+    #         upper_bounds[3] = value+0.01
             
     p0 = tuple(x0)
     popt, pcov = curve_fit(func, df['rot_to_max_angvel'], df['atk_ang'], 
-                        #    maxfev=10000, 
                            p0 = p0,
                            bounds=(lower_bounds,upper_bounds))
     y = func(x_range_to_fit,*popt)
@@ -55,15 +54,15 @@ def Fig7_bkg_fin_body(root):
     defaultPlotting(size=16)
     # %%
     which_zeitgeber = 'day'
-    DAY_RESAMPLE = 1000
+    DAY_RESAMPLE = 0
     NIGHT_RESAMPLE = 500
-    if_use_maxAngvelTime_perCondition = 0 # if to calculate max adjusted angvel time for each condition and selectt range for body rotation differently
-                                            # or to use -250ms to -50ms for all conditions
+    # if_use_maxAngvelTime_perCondition = 0 # if to calculate max adjusted angvel time for each condition and selectt range for body rotation differently
+    #                                         # or to use -250ms to -50ms for all conditions
     # Select data and create figure folder
     FRAME_RATE = 166
     
     X_RANGE = np.arange(-5,10.01,0.01)
-    BIN_WIDTH = 0.8
+    BIN_WIDTH = 0.6
     AVERAGE_BIN = np.arange(min(X_RANGE),max(X_RANGE),BIN_WIDTH)
 
     print("- Figure 7: ZF strains - Fin-body coordination")
@@ -83,11 +82,11 @@ def Fig7_bkg_fin_body(root):
     which_atk_ang = 'atk_ang' # atk_ang or 'atk_ang_phased'
     # get features
 
-    if if_use_maxAngvelTime_perCondition:
-        max_angvel_time, all_cond1, all_cond2 = get_max_angvel_rot(root, FRAME_RATE, ztime = which_zeitgeber)
-        all_feature_cond, all_cond1, all_cond2 = get_bout_features(root, FRAME_RATE, ztime = which_zeitgeber, max_angvel_time = max_angvel_time)
-    else:
-        all_feature_cond, all_cond1, all_cond2 = get_bout_features(root, FRAME_RATE, ztime = which_zeitgeber )
+    # if if_use_maxAngvelTime_perCondition:
+    #     max_angvel_time, all_cond1, all_cond2 = get_max_angvel_rot(root, FRAME_RATE, ztime = which_zeitgeber)
+    #     all_feature_cond, all_cond1, all_cond2 = get_bout_features(root, FRAME_RATE, ztime = which_zeitgeber, max_angvel_time = max_angvel_time)
+    # else:
+    all_feature_cond, all_cond1, all_cond2 = get_bout_features(root, FRAME_RATE, ztime = which_zeitgeber )
 
 
     # %% tidy data
@@ -128,11 +127,11 @@ def Fig7_bkg_fin_body(root):
                             random_state=2
                             )
     df_toplt = pd.concat([angles_day_resampled,angles_night_resampled],ignore_index=True)
+    
     # %% fit sigmoid - master
     all_coef = pd.DataFrame()
     all_y = pd.DataFrame()
     all_binned_average = pd.DataFrame()
-
 
     for (cond_abla,cond_dpf,cond_ztime), for_fit in df_toplt.groupby(['condition','dpf','ztime']):
         expNum = for_fit['expNum'].max()
@@ -198,78 +197,17 @@ def Fig7_bkg_fin_body(root):
     filename = os.path.join(fig_dir,"attack angle vs rot to angvel max.pdf")
     plt.savefig(filename,format='PDF')
 
-    # 
-
-    # %%
-    # plot 
-    # plt.close()
-    coef_name = 'slope'
-    defaultPlotting(size=12)
-    plt.figure()
-    p = sns.catplot(
-    data = all_coef, y=coef_name,x='condition',kind='strip',
-    color = 'grey',
-    edgecolor = None,
-    linewidth = 0,
-    s=8, 
-    alpha=0.3,
-    height=3,
-    aspect=1,
-    )
-    p.map(sns.pointplot,'condition',coef_name,
-        markers=['d','d','d'],
-        order=all_cond2,
-        join=False, 
-        errorbar=None,
-        color='black',
-        data=all_coef)
-    filename = os.path.join(fig_dir,f"{coef_name} .pdf")
-    plt.savefig(filename,format='PDF')
-
-    # 
-    # %%
-    defaultPlotting(size=12)
+    # plot coef
     for coef_name in ['k','xval','min','height','slope']:
-        plt.figure()
-        # p = sns.catplot(
-        #     data = all_coef, y=coef_name,x='condition',kind='point',join=False,
-        #     col='dpf',col_order=all_cond1,
-        #     errorbar='sd',
-        #     row = 'ztime', row_order=all_ztime,
-        #     # units=excluded_exp,
-        #     hue='condition', dodge=True,
-        #     hue_order = all_cond2,
-        #     sharey=False,
-        #     aspect=.6,
-        # )
-        # p.map(sns.lineplot,'condition',coef_name,estimator=None,
-        #     units='excluded_exp',
-        #     color='grey',
-        #     alpha=0.2,
-        #     data=all_coef)
-        # sns.despine(offset=10)
-        # filename = os.path.join(fig_dir,f"{coef_name} by cond1.pdf")
-        # plt.savefig(filename,format='PDF')
-        
-        p = sns.catplot(
-        data = all_coef, y=coef_name,x='condition',kind='strip',
-        color = 'grey',
-        edgecolor = None,
-        linewidth = 0,
-        s=8, 
-        alpha=0.3,
-        height=3,
-        aspect=1,
-        )
-        p.map(sns.pointplot,'condition',coef_name,
-            markers=['d','d','d'],
-            order=all_cond2,
-            join=False, 
-            errorbar=None,
-            color='black',
-            data=all_coef)
-        filename = os.path.join(fig_dir,f"{coef_name} .pdf")
+        plot_pointplt(all_coef,coef_name,all_cond2)
+        filename = os.path.join(fig_dir,f"{coef_name}.pdf")
         plt.savefig(filename,format='PDF')
+        
+    
+    # multiple comparison
+    
+    multi_comp = MultiComparison(all_coef['slope'], all_coef['condition'])
+    print(multi_comp.tukeyhsd().summary())
 
 # %%
 if __name__ == "__main__":

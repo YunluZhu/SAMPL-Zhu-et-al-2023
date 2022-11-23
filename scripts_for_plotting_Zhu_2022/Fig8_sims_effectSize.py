@@ -90,8 +90,6 @@ def calc_coef_effect_size(list_of_sample_N, xdata, ydata, sim_func, coef_ori_ful
     plt.figure(figsize=(4,3))
     g = sns.lineplot(
         data = df_toplt,
-        # x = 'sample_number',
-        # y = 'effect_size',
         y = 'sample_number',
         x = 'effect_size',
         hue = 'percent_diff',
@@ -283,22 +281,16 @@ def rightingGain_get_stats(ori_sample, sim_sample, master_sample):
     return res
 
 def Fig8_sims_effectSize(root):
-    """ Estimate the number of bouts required for various regression
+    """ Estimate effect size
 
     Steps:
-        1. Sample N datapoints from total dataset, N should be the bout number plotted
-        2. Bootstrap sampling of the sampled data, repeat x20 for estimation of variance and mean(sigma) for coef
-        3. Do regression, return R2 (adjusted), sigma (variance of the desired coef per regression)
-        4. run function plot_model_R2_confidence_interval(), which:
-            4.0. for each alpha given
-            4.1. Calculates mean R2 from 20x repeats for each bout number
-            4.2. Calculates Cohen's f2, which is an indicator of effect size, from each R2
-            4.3. Calculates CI width of f2
-            4.4. plot CI width as a function of bout number
-            4.5. return, mean R2, mean f2
-        
+        1. For a given percentage of difference, simulate dataset using sim_by_altered_coef()
+        2. sample desired number of data points from original and simulated dataset
+        3. generate a combined dataset with the same number of samples by randomly picking a Y value from either the sampled original dataset or sampled simulated dataset for each X
+        3. Do regression, on sampled ori data, sampled sim data, combined data
+        4. calculate effect size using Cohen's F2:
+            (value_sim - value_ori) / combined_sigma
     """
-
 
     # Select data and create figure folder
     
