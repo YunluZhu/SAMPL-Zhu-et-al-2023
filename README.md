@@ -1,13 +1,13 @@
 # Vertical Fish Analysis (Python ver.)
 
-Code related to Zhu Y, Auer F, Gelnaw H, Davis S N, Hamling K R, Schoppik D, 2022.
+Code related to Zhu Y, et. al, 2023. Scalable Apparatus to Measure Posture and Locomotion (SAMPL)
 
-This code is for analysis and visualization of data generated using free-swimming vertical fish apparatus.
+This code is for analysis and visualization of SAMPL data.
 
 ## Version notes
 
-Analysis code ver: v4.4.221110
-Plotting code ver: v4.5.221118
+Analysis code ver: v5.0.221215
+Plotting code ver: v5.0.221215
 
 ## Requirements
 
@@ -19,17 +19,17 @@ Build with Python3.8. See `environment.yml` for required packages.
 
 `src` folder contains all the scripts for data analysis and visualization.
 
-`docs` contains a copy of catalog files generated after running `.../src/vf_analysis/vf_analysis.py` and expected number of swim bouts captured over 24 hrs per box in constant dark condition.
+`docs` contains a copy of catalog files generated after running `.../src/SAMPL_analysis/SAMPL_analysis.py` and expected number of swim bouts captured over 24 hrs per box in constant dark condition.
 
-`sample figures` contains plots generated using scripts under `.../src/vf_visualization/`
+`sample figures` contains plots generated using scripts under `.../src/SAMPL_visualization/`
 
-`Manuscript figures` has all figures in the manuscript generated using scripts under `scripts_for_plotting_Zhu_2022`
+`Manuscript figures` has all figures in the manuscript generated using scripts under `scripts_for_plotting_Zhu_2023`
 
 ### Analyze raw data files
 
 To analyze data generated using the free-swimming apparatus:
 
-1. Run `vf_analysis.py` under `.../src/vf_analysis/`.
+1. Run `SAMPL_analysis.py` under `.../src/SAMPL_analysis/`.
 2. Follow the instruction and input the root path that contains data files (.dlm) and corresponding metadata files (.ini). Data can be directly under the root directory or under subfolders within the root directoty. See notes for details.
 3. Follow the instruction and input the frame rate (in integer). See notes for details.
 4. The program will go through every data file in each subfolder (if there is any) and extract swim attributes.
@@ -48,7 +48,7 @@ All the extracted swim bouts under `bout_data.h5` are aligned at the time of the
 
 To generate figures:
 
-1. Run individual scripts under `.../src/vf_visualization/`.
+1. Run individual scripts under `.../src/SAMPL_visualization/`.
 2. Alternatively, one may run `plot_all.py` to plot all figures.
 3. Figures will be saved under `.../figures`.
 
@@ -60,11 +60,11 @@ To generate figures:
 
 - `plot_IBIposture.py` plots Inter Bout Interval (IBI or IEI) posture distribution and standard deviation. This script contains function: `plot_IBIposture()`. This script looks for "prop_Bout_IEI2" in the "prop_bout_IEI_pitch" data which includes mean of body angles during IEI.
 
-- `plot_bout_timing.py` plots bout frequency as a function of pitch angle and fiitted coefs of function `y = a * ((x-b)^2) + c`. Jackknife resampling is applied if contains data from multiple experiments (subfolders under the root path). This script contains function: `plot_bout_frequency()`
+- `plot_bout_timing.py` plots bout frequency as a function of pitch angle and fiitted coefs of function `y = a * ((x-b)^2) + c`. This script contains function: `plot_bout_frequency()`
 
-- `plot_kinetics.py` plots bout kinetics: righting gain, set point, steering gain. Jackknife resampling is applied if contains data from multiple experiments (subfolders under the root path). This script contains function: `plot_kinetics()`
+- `plot_kinematics.py` plots bout kinematics: righting gain, set point, steering gain. This script contains function: `plot_kinematics()`
 
-- `plot_fin_body_coordination.py` plots attack angle as a function of rotation and calculates the maximal slope which is termed the fin-body ratio. Rotation is calculated by pitch change from -250 ms to -50 ms. This script contains function: `plot_fin_body_coordination()`
+- `plot_fin_body_coordination.py` plots attack angle as a function of rotation and calculates the maximal slope which is termed the fin-body ratio. Rotation is calculated by pitch change from -250 ms to -40 ms. This script contains function: `plot_fin_body_coordination()`
 
 - `plot_fin_body_coordination_byAngvelMax.py` plots attack angle as a function of rotation and calculates the maximal slope which is termed the fin-body ratio. Rotation is calculated by pitch change from -250 ms to time of max angular velocity. This script contains function: `plot_fin_body_coordination_byAngvelMax()`
 
@@ -96,6 +96,8 @@ To generate figures:
 
 ## License
 
-Distributed under the MIT License. See `LICENSE.txt` for more information.
+Distributed under the MIT License.
 
 ## Contact
+
+Lead contact: Dr. David Schoppik
