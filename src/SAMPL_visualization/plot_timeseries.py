@@ -47,7 +47,7 @@ def plot_aligned(root, **kwargs):
     """plots parameters of swim bouts aligned at the time of the peak speed with and without nose-up bouts and nose-down bouts separated.
 
     Args:
-        root (string): a directory containing analyzed dlm data.
+        root (str): a directory containing analyzed dlm data.
         ---kwargs---
         figure_dir (str): directory to save figures. If not defined, figures will be saved to folder "figures"
 

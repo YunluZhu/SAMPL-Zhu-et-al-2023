@@ -1,17 +1,26 @@
-# Vertical Fish Analysis (Python ver.)
+# SAMPL Analysis and Visualization
 
-Code related to Zhu Y, et. al, 2023. Scalable Apparatus to Measure Posture and Locomotion (SAMPL)
+Code related to "Zhu Y, et. al, 2023. Scalable Apparatus to Measure Posture and Locomotion (SAMPL)"
 
 This code is for analysis and visualization of SAMPL data.
 
 ## Version notes
 
-Analysis code ver: v5.0.221215
-Plotting code ver: v5.0.221215
+Analysis code ver: v5.0.221215. Plotting code ver: v5.0.221215
 
 ## Requirements
 
-Build with Python3.8. See `environment.yml` for required packages.
+Build with Python 3.10.4. See `environment.yml` for a complete list of packages. Below is a list of required packages:
+
+- astropy=5.1
+- pandas=1.4.4
+- pytables=3.7.0
+- matplotlib=3.5.2
+- numpy=1.23.3
+- scipy=1.9.1
+- seaborn=0.12.0
+- tqdm=4.64.1
+- scikit-learn=1.1.1
 
 ## Usage
 

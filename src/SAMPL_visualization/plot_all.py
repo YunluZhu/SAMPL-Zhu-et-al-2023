@@ -24,14 +24,16 @@ def main(root, sample):
     
     plt.close('all')
     plot_kinematics(root, sample_bout=sample)
-    
-    plt.close('all')
-    plot_kinematics_jackknifed(root, sample_bout=sample)
+
+    # If to plot jackknifed kinematic parameters:
+    # plt.close('all')
+    # plot_kinematics_jackknifed(root, sample_bout=sample)
     
     # Timeseries for aligned bouts may take long to plot for large dataset (>10GB)
     plt.close('all')
     plot_aligned(root)
         
+    # If to use fixed time of max angvel to calculate steering related rotatioin (-250 to -40 ms)
     # plt.close('all')
     # plot_fin_body_coordination(root, sample_bout=sample)
         

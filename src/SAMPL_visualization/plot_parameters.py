@@ -31,6 +31,14 @@ from plot_functions.get_index import (get_index, get_frame_rate)
 
 # %%
 def plot_save_histogram(toplt,feature_toplt,xlabel,fig_dir):
+    """Plot and save histogram
+
+    Args:
+        toplt (pd.DataFrame): data to plot
+        feature_toplt (str): column to plot
+        xlabel (str): x axis label
+        fig_dir (str): dir to save figure
+    """
     upper = np.nanpercentile(toplt[feature_toplt], 99.5)
     lower = np.nanpercentile(toplt[feature_toplt], 0.5)
     g = sns.histplot(data=toplt, x=feature_toplt, 
@@ -51,7 +59,6 @@ def plot_parameters(root, **kwargs):
     """Plot distribution of bout parameters. Plot 2D distribution of parameters for kinematics calculation.
         ---kwargs---
         figure_dir (str): directory to save figures. If not defined, figures will be saved to folder "figures"
-
 
     Args:
         root (string): directory

@@ -55,7 +55,6 @@ def plot_kinematics(root, **kwargs):
     
     root, all_dir, fig_dir, if_sample, SAMPLE_N, if_multiple_repeats = setup_vis_parameter(root, fig_dir, if_sample=False, SAMPLE_N=-1, if_multiple_repeats=False, **kwargs)
 
-        
     # get frame rate
     try:
         FRAME_RATE = get_frame_rate(all_dir[0])
