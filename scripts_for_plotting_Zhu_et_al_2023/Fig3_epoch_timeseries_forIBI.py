@@ -1,35 +1,3 @@
-'''
-Plot basic parameters as a function of time. Modify "all_features" to choose parameters to plot.
-This script contains two functions:
-    plot_aligned
-    plot_raw
-
-plt_timeseries.plot_aligned(dir)
-    plots parameters of aligned bouts as a function of time.
-
-        
-plt_timeseries.plot_raw(dir) 
-    plots raw data from a single epoch that contains one or more bouts as a function of time
-
-
-This script takes two types of data structures:
-1. Input directory being a folder containing analyzed dlm data
-    dir/
-    ├── all_data.h5
-    ├── bout_data.h5
-    └── IEI_data.h5
-2. Input directory being a folder with subfolders containing dlm data
-    dir/
-    ├── experiment 1/  
-    │   ├── all_data.h5
-    │   ├── bout_data.h5
-    │   └── IEI_data.h5
-    └── experiment 2/
-        ├── all_data.h5
-        ├── bout_data.h5
-        └── IEI_data.h5
-'''
-
 # %%
 import os
 import pandas as pd 
