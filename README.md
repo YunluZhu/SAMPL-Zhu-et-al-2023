@@ -32,7 +32,7 @@ Build with Python 3.10.4. See `environment.yml` for a complete list of packages.
 
 `sample figures` contains plots generated using scripts under `.../src/SAMPL_visualization/`
 
-`Manuscript figures` has all figures in the manuscript generated using scripts under `scripts_for_plotting_Zhu_2023`
+`Manuscript figures` has all figures in the manuscript generated using scripts under `scripts_for_plotting_Zhu_et_al_2023`
 
 ### Analyze raw data files
 
